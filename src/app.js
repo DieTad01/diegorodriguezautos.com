@@ -29,6 +29,7 @@ function crearApp() {
         scriptSrc: ["'self'"],
         styleSrc: ["'self'"],
         imgSrc: ["'self'", 'https:'], // fotos desde Google Drive u otro https
+        frameSrc: ['https://www.google.com'], // solo el mapa de Google Maps
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],

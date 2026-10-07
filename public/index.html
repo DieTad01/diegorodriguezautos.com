@@ -3,25 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diego Rodríguez Autos</title>
-  <meta name="description" content="Autos seminuevos en venta: inventario actualizado de Diego Rodríguez Autos.">
+  <title>Diego Rodríguez · Asesor BYD y Chevrolet en León</title>
+  <meta name="description" content="Autos BYD y Chevrolet en León, Gto. Inventario actualizado y atención personalizada con Diego Rodríguez, asesor digital. Blvd. Adolfo López Mateos 3431 Ote.">
+  <meta name="theme-color" content="#050608">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+  <!-- Vista previa al compartir el link (WhatsApp, Facebook) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://diegorodriguezautos.com/">
+  <meta property="og:title" content="Diego Rodríguez · Asesor BYD y Chevrolet">
+  <meta property="og:description" content="Dos grandes marcas, un mismo compromiso: tu confianza. Blvd. Adolfo López Mateos 3431 Ote., León, Gto.">
+  <meta property="og:image" content="https://diegorodriguezautos.com/img/compartir.jpg">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 
   <header class="sitio">
     <div class="contenedor barra">
-      <a class="logo" href="/">Diego Rodríguez <span>Autos</span></a>
+      <a class="logo" href="/" aria-label="Inicio">
+        <picture>
+          <source srcset="/img/logo-byd-chevrolet.webp" type="image/webp">
+          <img src="/img/logo-byd-chevrolet.png" alt="BYD | Chevrolet" width="580" height="125">
+        </picture>
+      </a>
       <nav>
         <a href="#inventario">Inventario</a>
+        <a href="#ubicacion">Ubicación</a>
+        <a class="boton-llamar" href="tel:+524777321263">Llamar</a>
       </nav>
     </div>
   </header>
 
+  <section class="hero">
+    <div class="contenedor">
+      <p class="hero-asesor">Diego Rodríguez · Asesor Digital</p>
+      <h1>Dos grandes marcas, un mismo compromiso: <span class="oro">tu&nbsp;confianza.</span></h1>
+      <p class="hero-texto">En BYD y Chevrolet trabajamos cada día para ofrecerte <span class="oro">tecnología, calidad, innovación</span> y el mejor servicio.</p>
+      <div class="hero-acciones">
+        <a class="boton" href="#inventario">Ver inventario</a>
+        <a class="boton secundario" href="#ubicacion">Cómo llegar</a>
+      </div>
+      <ul class="valores">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5l-8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+          <span><strong>Calidad</strong> garantizada</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15v-3l2.5-4.5h9L18 11h2a1 1 0 0 1 1 1v3H3Z"/><circle cx="7" cy="16" r="2"/><circle cx="17" cy="16" r="2"/></svg>
+          <span><strong>Tecnología</strong> que te mueve</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-4 3.1-7 7-7s7 3 7 7"/></svg>
+          <span><strong>Atención</strong> personalizada</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 12 4-4 4 2 3-2 4 1 5 3"/><path d="m7 13 3 3a1.5 1.5 0 0 0 2-2l-2-2"/><path d="m12 15 1.5 1.5a1.5 1.5 0 0 0 2-2L13 12"/><path d="m15 14 1 1a1.5 1.5 0 0 0 2-2l-3-3"/></svg>
+          <span><strong>Compromiso</strong> que nos une</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
   <main class="contenedor">
     <section id="inventario">
       <div class="encabezado-seccion">
-        <h1>Inventario</h1>
+        <h2>Inventario</h2>
         <form id="form-busqueda" role="search">
           <label class="oculto" for="busqueda">Buscar</label>
           <input type="search" id="busqueda" name="q" maxlength="80" placeholder="Marca, modelo o año" autocomplete="off">
@@ -32,11 +78,45 @@
       <!-- app.js llena este contenedor con los vehículos -->
       <div id="lista-vehiculos" class="grid-vehiculos"></div>
     </section>
+
+    <section id="ubicacion" class="ubicacion">
+      <div class="ubicacion-info">
+        <h2>Visítanos</h2>
+        <address>
+          <span class="dato-etiqueta">Dirección</span>
+          Blvd. Adolfo López Mateos 3431 Ote.<br>
+          C.P. 37530, León, Guanajuato, México
+        </address>
+        <p>
+          <span class="dato-etiqueta">Teléfono</span>
+          <a href="tel:+524777321263">477 732 12 63</a>
+        </p>
+        <p>
+          <span class="dato-etiqueta">Asesor Digital</span>
+          Diego Rodríguez
+        </p>
+        <div class="hero-acciones">
+          <a class="boton" href="https://www.google.com/maps/search/?api=1&amp;query=Blvd.+Adolfo+L%C3%B3pez+Mateos+3431+Oriente%2C+37530+Le%C3%B3n%2C+Gto.%2C+M%C3%A9xico" target="_blank" rel="noopener noreferrer">Cómo llegar</a>
+          <a class="boton secundario" href="tel:+524777321263">Llamar ahora</a>
+        </div>
+      </div>
+      <iframe class="mapa" title="Mapa: Blvd. Adolfo López Mateos 3431 Ote., León, Gto."
+        src="https://www.google.com/maps?q=Blvd.+Adolfo+L%C3%B3pez+Mateos+3431+Oriente,+37530+Le%C3%B3n,+Gto.,+M%C3%A9xico&amp;output=embed"
+        loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    </section>
   </main>
 
   <footer class="sitio">
-    <div class="contenedor">
-      <p>Diego Rodríguez Autos</p>
+    <div class="contenedor pie">
+      <picture>
+        <source srcset="/img/logo-byd-chevrolet.webp" type="image/webp">
+        <img class="pie-logo" src="/img/logo-byd-chevrolet.png" alt="BYD | Chevrolet" width="580" height="125" loading="lazy">
+      </picture>
+      <div>
+        <p class="oro">Seguimos avanzando contigo.</p>
+        <p>Blvd. Adolfo López Mateos 3431 Ote., C.P. 37530, León, Gto., México</p>
+        <p>Diego Rodríguez · Asesor Digital · <a href="tel:+524777321263">477 732 12 63</a></p>
+      </div>
     </div>
   </footer>
 
@@ -49,7 +129,7 @@
         <span class="etiqueta" hidden></span>
       </button>
       <div class="vehiculo-info">
-        <h2 class="vehiculo-titulo"></h2>
+        <h3 class="vehiculo-titulo"></h3>
         <p class="vehiculo-version"></p>
         <p class="vehiculo-precio"></p>
         <ul class="vehiculo-datos">
@@ -69,6 +149,7 @@
     <p class="detalle-precio"></p>
     <ul class="vehiculo-datos detalle-datos"></ul>
     <p class="detalle-descripcion"></p>
+    <a class="boton" href="tel:+524777321263">Me interesa · Llamar</a>
   </dialog>
 
   <script src="/js/comun.js"></script>

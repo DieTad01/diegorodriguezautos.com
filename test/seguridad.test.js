@@ -210,6 +210,7 @@ test('XSS: la CSP solo permite scripts propios', async () => {
   assert.match(csp, /object-src 'none'/);
   assert.match(csp, /frame-ancestors 'none'/);
   assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval/);
+  assert.match(csp, /frame-src https:\/\/www\.google\.com(;|$)/, 'solo se permite el iframe del mapa');
 });
 
 // ---------------------------------------------------------------

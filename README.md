@@ -1,14 +1,15 @@
 # diegorodriguezautos.com
 
-Website for **Diego Rodríguez Autos**, a used-car dealership: a public inventory page plus a password-protected admin panel to manage vehicles. Vehicle photos are linked from Google Drive, so no image files are stored on the server.
+Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet** in León, Guanajuato, Mexico (Blvd. Adolfo López Mateos 3431 Ote.): a public inventory page with location, map and click-to-call, plus a password-protected admin panel to manage vehicles. The visual identity (black and gold) comes from the BYD | Chevrolet branding. Vehicle photos are linked from Google Drive, so no image files are stored on the server.
 
-![Public inventory](docs/img/publico-inventario.png)
+![Home page](docs/img/publico-portada.png)
 
 ## Tech stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Frontend | **HTML5, CSS3, vanilla JavaScript** (no framework, no build step) | Public inventory page and admin panel. DOM is built with `<template>` + `textContent` only |
+| Frontend | **HTML5, CSS3, vanilla JavaScript** (no framework, no build step) | Public inventory page and admin panel. DOM is built with `<template>` + `textContent` only. Dark theme driven by CSS custom properties |
+| | **Google Maps** embed + directions link | Dealership location (the only third-party frame allowed by the CSP) |
 | Backend | **Node.js** 20+ (developed on 22 LTS) | Runtime |
 | | **Express** 5 | HTTP server, routing and static files (`public/` only) |
 | | **mysql2** 3 (promise API) | MySQL driver with connection pooling and prepared statements (`execute` + `?` placeholders) |
@@ -37,6 +38,7 @@ Browser ──HTTPS──> Nginx (80/443) ──> Node.js + Express (127.0.0.1:3
 ```
 public/                  The only folder served to the internet
   index.html, admin.html
+  img/                   Logo, favicon and social-share image
   css/styles.css
   js/comun.js, app.js, admin.js
 src/                     Server code (never served)
