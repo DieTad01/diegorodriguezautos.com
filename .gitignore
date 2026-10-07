@@ -1,0 +1,26 @@
+# Variables de entorno y credenciales: NUNCA al repositorio
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+id_rsa*
+id_ed25519*
+
+# Respaldos de base de datos
+*.sql
+*.sql.gz
+*.dump
+
+# Dependencias y logs
+node_modules/
+npm-debug.log*
+logs/
+*.log
+
+# Vercel / sistema
+.vercel/
+.DS_Store
+Thumbs.db
