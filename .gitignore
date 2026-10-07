@@ -9,10 +9,13 @@
 id_rsa*
 id_ed25519*
 
-# Respaldos de base de datos
+# Respaldos de base de datos (mysqldump). Los scripts de db/ sí se suben.
 *.sql
 *.sql.gz
 *.dump
+!db/schema.sql
+!db/datos-ejemplo.sql
+respaldos/
 
 # Dependencias y logs
 node_modules/
@@ -20,7 +23,6 @@ npm-debug.log*
 logs/
 *.log
 
-# Vercel / sistema
-.vercel/
+# Sistema
 .DS_Store
 Thumbs.db

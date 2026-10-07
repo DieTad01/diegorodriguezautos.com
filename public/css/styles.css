@@ -1,0 +1,516 @@
+/* ===== Variables de color (cámbialas aquí y se aplican en todo) ===== */
+:root {
+  --color-principal: #2f5496;
+  --color-principal-oscuro: #233f72;
+  --color-fondo: #f5f5f5;
+  --color-superficie: #fff;
+  --color-texto: #222;
+  --color-suave: #666;
+  --color-borde: #ddd;
+  --color-error: #b3261e;
+  --color-ok: #1e7b34;
+  --color-aviso: #a35f00;
+  --radio: 10px;
+  --sombra: 0 1px 3px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.05);
+}
+
+/* ===== Base ===== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+  padding-block: 24px 48px;
+}
+
+img {
+  max-width: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+h1, h2 {
+  line-height: 1.2;
+}
+
+/* ===== Botones y formularios ===== */
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: var(--color-principal);
+  color: #fff;
+  font-weight: 600;
+}
+
+button:hover {
+  background: var(--color-principal-oscuro);
+}
+
+button.secundario {
+  background: var(--color-superficie);
+  color: var(--color-principal);
+  border: 1px solid var(--color-principal);
+}
+
+button.secundario:hover {
+  background: #eef2fa;
+}
+
+button.peligro {
+  background: var(--color-superficie);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+
+button.enlace {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-weight: 400;
+}
+
+input, select, textarea {
+  font: inherit;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  background: var(--color-superficie);
+  color: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 3px solid rgb(47 84 150 / 0.35);
+  outline-offset: 1px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ===== Encabezado ===== */
+header.sitio {
+  background: var(--color-principal);
+  color: #fff;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+}
+
+.logo {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.logo span {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+header nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+header nav a {
+  color: #fff;
+  text-decoration: none;
+  opacity: 0.9;
+}
+
+header nav a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* ===== Secciones ===== */
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.encabezado-seccion h1 {
+  margin: 0;
+}
+
+#form-busqueda {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  max-width: 420px;
+  min-width: 240px;
+}
+
+.estado {
+  color: var(--color-suave);
+  min-height: 1.5em;
+}
+
+/* ===== Tarjeta de vehículo (la crea app.js) ===== */
+.grid-vehiculos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.vehiculo {
+  background: var(--color-superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.vehiculo-foto {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border-radius: 0;
+  background: #e4e7ec;
+  color: var(--color-suave);
+}
+
+.vehiculo-foto:hover {
+  background: #dde1e7;
+}
+
+.vehiculo-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sin-foto {
+  font-weight: 400;
+}
+
+.etiqueta {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--color-aviso);
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.vehiculo-info {
+  padding: 14px 16px 18px;
+}
+
+.vehiculo-titulo {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.vehiculo-version {
+  margin: 0;
+  color: var(--color-suave);
+  min-height: 1.5em;
+}
+
+.vehiculo-precio {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-principal);
+  margin: 6px 0;
+}
+
+.vehiculo-datos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vehiculo-datos li {
+  font-size: 0.85rem;
+  background: var(--color-fondo);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+/* ===== Ventana de detalle ===== */
+.detalle {
+  width: min(760px, calc(100% - 32px));
+  max-height: calc(100vh - 32px);
+  border: 0;
+  border-radius: var(--radio);
+  padding: 20px;
+}
+
+.detalle::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.detalle .cerrar {
+  position: sticky;
+  top: 0;
+  float: right;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 6px 12px;
+}
+
+.detalle-foto {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  background: #111;
+  border-radius: 8px;
+}
+
+.detalle-miniaturas {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.detalle-miniaturas button {
+  padding: 0;
+  background: none;
+  flex: 0 0 auto;
+}
+
+.detalle-miniaturas img {
+  width: 84px;
+  height: 63px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.detalle-precio {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-principal);
+  margin: 4px 0 10px;
+}
+
+.detalle-descripcion {
+  white-space: pre-line;
+}
+
+/* ===== Admin ===== */
+.tarjeta {
+  background: var(--color-superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.login {
+  max-width: 380px;
+  margin: 40px auto;
+}
+
+.login form {
+  display: grid;
+  gap: 14px;
+}
+
+#form-vehiculo {
+  display: grid;
+  gap: 14px;
+}
+
+#form-vehiculo h2 {
+  margin: 0;
+}
+
+.campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+fieldset.imagenes {
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+fieldset.imagenes legend {
+  font-weight: 600;
+  padding-inline: 4px;
+}
+
+fieldset.imagenes button {
+  justify-self: start;
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-suave);
+}
+
+.previsualizacion {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.previsualizacion figure {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.previsualizacion img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.mensaje {
+  margin: 0;
+}
+
+.error {
+  color: var(--color-error);
+}
+
+ul.mensaje {
+  padding-left: 20px;
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+  background: var(--color-superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+
+.tabla th, .tabla td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-borde);
+  vertical-align: middle;
+}
+
+.tabla th {
+  font-size: 0.85rem;
+  color: var(--color-suave);
+}
+
+.tabla small {
+  color: var(--color-suave);
+}
+
+.miniatura {
+  width: 72px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+.sin-foto-chica {
+  font-size: 0.8rem;
+  color: var(--color-suave);
+}
+
+.estado-disponible { color: var(--color-ok); font-weight: 600; }
+.estado-apartado { color: var(--color-aviso); font-weight: 600; }
+.estado-vendido { color: var(--color-suave); font-weight: 600; }
+
+/* ===== Pie de página ===== */
+footer.sitio {
+  background: #1d2433;
+  color: #c9d1e0;
+  padding-block: 20px;
+  font-size: 0.9rem;
+}
+
+footer.sitio p {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .encabezado-seccion h1 {
+    font-size: 1.6rem;
+  }
+
+  #form-busqueda {
+    max-width: none;
+  }
+}

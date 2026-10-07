@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración · Diego Rodríguez Autos</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="admin">
+
+  <header class="sitio">
+    <div class="contenedor barra">
+      <a class="logo" href="/">Diego Rodríguez <span>Autos</span></a>
+      <nav>
+        <a href="/">Ver sitio</a>
+        <button type="button" id="btn-salir" class="enlace" hidden>Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="contenedor">
+
+    <!-- 1) Inicio de sesión -->
+    <section id="seccion-login" class="tarjeta login" hidden>
+      <h1>Administración</h1>
+      <form id="form-login">
+        <label>Usuario
+          <input name="usuario" autocomplete="username" required maxlength="100">
+        </label>
+        <label>Contraseña
+          <input name="password" type="password" autocomplete="current-password" required maxlength="200">
+        </label>
+        <p class="mensaje error" id="error-login" role="alert"></p>
+        <button type="submit">Entrar</button>
+      </form>
+    </section>
+
+    <!-- 2) Panel (solo con sesión) -->
+    <section id="seccion-panel" hidden>
+      <div class="encabezado-seccion">
+        <h1>Vehículos</h1>
+        <button type="button" id="btn-nuevo">+ Agregar vehículo</button>
+      </div>
+      <p id="estado-panel" class="estado" role="status"></p>
+
+      <form id="form-vehiculo" class="tarjeta" hidden novalidate>
+        <h2 id="titulo-form">Nuevo vehículo</h2>
+        <div class="campos">
+          <label>Marca *<input name="marca" required maxlength="50"></label>
+          <label>Modelo *<input name="modelo" required maxlength="60"></label>
+          <label>Año *<input name="anio" type="number" required min="1950" step="1"></label>
+          <label>Versión<input name="version" maxlength="80"></label>
+          <label>Precio (MXN) *<input name="precio" type="number" required min="0" step="0.01"></label>
+          <label>Kilometraje *<input name="kilometraje" type="number" required min="0" step="1" value="0"></label>
+          <label>Color<input name="color" maxlength="30"></label>
+          <label>Transmisión
+            <select name="transmision">
+              <option value="automatica">Automática</option>
+              <option value="manual">Manual</option>
+            </select>
+          </label>
+          <label>Estado
+            <select name="estado">
+              <option value="disponible">Disponible</option>
+              <option value="apartado">Apartado</option>
+              <option value="vendido">Vendido</option>
+            </select>
+          </label>
+        </div>
+        <label>Descripción<textarea name="descripcion" rows="3" maxlength="2000"></textarea></label>
+
+        <fieldset class="imagenes">
+          <legend>Imágenes (enlaces, no se suben al servidor)</legend>
+          <p class="ayuda">
+            Pega <strong>un enlace por línea</strong> (máximo 15). La primera será la portada.<br>
+            Google Drive: clic derecho en la imagen → <em>Compartir</em> → Acceso general:
+            <em>"Cualquier persona con el enlace"</em> → <em>Copiar enlace</em>.
+            También sirve cualquier enlace directo a una imagen que empiece con <code>https://</code>.
+          </p>
+          <textarea name="imagenes" rows="4" spellcheck="false" placeholder="https://drive.google.com/file/d/…/view?usp=sharing"></textarea>
+          <button type="button" id="btn-previsualizar" class="secundario">Previsualizar imágenes</button>
+          <div id="previsualizacion" class="previsualizacion"></div>
+        </fieldset>
+
+        <ul class="mensaje error" id="errores-form" role="alert"></ul>
+        <div class="acciones">
+          <button type="submit">Guardar</button>
+          <button type="button" id="btn-cancelar" class="secundario">Cancelar</button>
+        </div>
+      </form>
+
+      <div class="tabla-scroll">
+        <table class="tabla">
+          <thead>
+            <tr><th>Foto</th><th>Vehículo</th><th>Precio</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody id="tabla-vehiculos"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/comun.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

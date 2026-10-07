@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=20"
+    "start": "node server.js",
+    "crear-admin": "node scripts/crear-admin.js",
+    "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
+    "helmet": "^8.3.0",
     "mysql2": "^3.11.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

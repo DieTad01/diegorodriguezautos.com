@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diego Rodríguez Autos</title>
+  <meta name="description" content="Autos seminuevos en venta: inventario actualizado de Diego Rodríguez Autos.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <header class="sitio">
+    <div class="contenedor barra">
+      <a class="logo" href="/">Diego Rodríguez <span>Autos</span></a>
+      <nav>
+        <a href="#inventario">Inventario</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="contenedor">
+    <section id="inventario">
+      <div class="encabezado-seccion">
+        <h1>Inventario</h1>
+        <form id="form-busqueda" role="search">
+          <label class="oculto" for="busqueda">Buscar</label>
+          <input type="search" id="busqueda" name="q" maxlength="80" placeholder="Marca, modelo o año" autocomplete="off">
+          <button type="submit">Buscar</button>
+        </form>
+      </div>
+      <p id="estado-lista" class="estado" role="status"></p>
+      <!-- app.js llena este contenedor con los vehículos -->
+      <div id="lista-vehiculos" class="grid-vehiculos"></div>
+    </section>
+  </main>
+
+  <footer class="sitio">
+    <div class="contenedor">
+      <p>Diego Rodríguez Autos</p>
+    </div>
+  </footer>
+
+  <!-- Plantilla de tarjeta: app.js la copia y llena con textContent -->
+  <template id="tpl-vehiculo">
+    <article class="vehiculo">
+      <button type="button" class="vehiculo-foto" aria-label="Ver fotos y detalles">
+        <img alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="sin-foto">Sin foto</span>
+        <span class="etiqueta" hidden></span>
+      </button>
+      <div class="vehiculo-info">
+        <h2 class="vehiculo-titulo"></h2>
+        <p class="vehiculo-version"></p>
+        <p class="vehiculo-precio"></p>
+        <ul class="vehiculo-datos">
+          <li class="dato-km"></li>
+          <li class="dato-transmision"></li>
+          <li class="dato-color"></li>
+        </ul>
+      </div>
+    </article>
+  </template>
+
+  <dialog id="detalle" class="detalle">
+    <button type="button" class="cerrar" aria-label="Cerrar">×</button>
+    <img class="detalle-foto" alt="" referrerpolicy="no-referrer">
+    <div class="detalle-miniaturas"></div>
+    <h2 class="detalle-titulo"></h2>
+    <p class="detalle-precio"></p>
+    <ul class="vehiculo-datos detalle-datos"></ul>
+    <p class="detalle-descripcion"></p>
+  </dialog>
+
+  <script src="/js/comun.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
