@@ -298,7 +298,7 @@ test('Admin: una cookie inventada o alterada no sirve', async () => {
   const falsas = [
     `${nombre}=9999999999999.abc`,
     `${nombre}=${Number(expira) + 1000000}.${firma}`,
-    `${nombre}=${expira}.${firma.slice(0, -1)}A`,
+    `${nombre}=${expira}.${firma.slice(0, -1)}${firma.endsWith('A') ? 'B' : 'A'}`,
     `${nombre}=${Date.now() - 1000}.${firma}`,
   ];
   for (const falsa of falsas) {
@@ -329,6 +329,98 @@ test('CSRF: peticiones desde otro sitio se bloquean', async () => {
   });
   assert.equal(formulario.status, 415);
   assert.equal(await contarVehiculos(), 2);
+});
+
+// ---------------------------------------------------------------
+// Panel admin (detrás del control de acceso): inyección campo por campo
+// ---------------------------------------------------------------
+
+const ATAQUES_SQL = [
+  "' OR '1'='1",
+  "'; DROP TABLE vehiculos; --",
+  '" OR ""="',
+  "\\'; DELETE FROM vehiculos; #",
+  "1' UNION SELECT @@version -- ",
+  "x'); TRUNCATE ventas; --",
+  "' AND SLEEP(5) AND '1'='1",
+];
+const ATAQUES_HTML = [
+  '<script>alert(1)</script>',
+  '<img src=x onerror=alert(1)>',
+  '"><svg onload=alert(1)>',
+  "'><iframe src=//malo.com>",
+  'javascript:alert(1)',
+  '{{constructor.constructor("alert(1)")()}}',
+  '<a href="javascript:alert(1)">x</a>',
+];
+const CAMPOS_TEXTO = { marca: 50, modelo: 60, version: 80, color: 30, descripcion: 2000 };
+
+test('Admin: el login resiste inyección SQL/HTML y tipos raros', async () => {
+  const intentos = [
+    ...ATAQUES_SQL.map((a) => ({ usuario: a, password: a })),
+    ...ATAQUES_HTML.map((a) => ({ usuario: a, password: a })),
+    { usuario: 'admin', password: { $ne: null } },
+    { usuario: { $gt: '' }, password: 'x' },
+    { usuario: ['admin'], password: ['contraseña-de-prueba'] },
+    { usuario: 'admin', password: 'x'.repeat(10000) },
+    { usuario: 'admin' },
+    {},
+  ];
+  // Se usa una IP distinta para no activar el bloqueo por fuerza bruta
+  for (const body of intentos) {
+    const r = await peticion('/api/admin/login', { method: 'POST', body, headers: { 'X-Forwarded-For': '10.9.9.9' } });
+    assert.notEqual(r.status, 200, JSON.stringify(body).slice(0, 80));
+    assert.equal(r.headers.get('set-cookie'), null, 'no debe crear sesión');
+  }
+});
+
+test('Admin: cada campo guarda inyecciones SQL y HTML como texto, al crear y al editar', async () => {
+  const antes = await contarVehiculos();
+  const [[{ ventasAntes }]] = await pool.query('SELECT COUNT(*) AS ventasAntes FROM ventas');
+  const base = await peticion('/api/admin/vehiculos', { method: 'POST', body: VEHICULO, conSesion: true });
+  assert.equal(base.status, 201);
+
+  for (const [campo, max] of Object.entries(CAMPOS_TEXTO)) {
+    for (const ataque of [...ATAQUES_SQL, ...ATAQUES_HTML].filter((a) => a.length <= max)) {
+      const datos = { ...VEHICULO, [campo]: ataque };
+      const creado = await peticion('/api/admin/vehiculos', { method: 'POST', body: datos, conSesion: true });
+      assert.equal(creado.status, 201, `crear ${campo}: ${ataque}`);
+      const editado = await peticion(`/api/admin/vehiculos/${base.json.id}`, { method: 'PUT', body: datos, conSesion: true });
+      assert.equal(editado.status, 200, `editar ${campo}: ${ataque}`);
+
+      const [[fila]] = await pool.execute(`SELECT ${campo} AS valor FROM vehiculos WHERE id IN (?, ?) GROUP BY ${campo}`, [creado.json.id, base.json.id]);
+      assert.equal(fila.valor, ataque.trim(), `${campo} debe guardarse literal (solo sin espacios en los extremos)`);
+      await pool.execute('DELETE FROM vehiculos WHERE id = ?', [creado.json.id]);
+    }
+  }
+
+  const lista = await peticion('/api/admin/vehiculos', { conSesion: true });
+  assert.match(lista.headers.get('content-type'), /^application\/json/);
+  assert.equal(await contarVehiculos(), antes + 1, 'ningún ataque borró ni duplicó filas');
+  const [[{ ventasDespues }]] = await pool.query('SELECT COUNT(*) AS ventasDespues FROM ventas');
+  assert.equal(ventasDespues, ventasAntes, 'ningún ataque tocó otras tablas');
+  const [tablas] = await pool.query('SHOW TABLES');
+  assert.equal(tablas.length, 5, 'todas las tablas siguen existiendo');
+  await pool.execute('DELETE FROM vehiculos WHERE id = ?', [base.json.id]);
+});
+
+test('Admin: estado y transmisión solo aceptan sus opciones exactas', async () => {
+  for (const ataque of [...ATAQUES_SQL, ...ATAQUES_HTML, 'DISPONIBLE', 'disponible ', null, 1, true]) {
+    for (const campo of ['estado', 'transmision']) {
+      const r = await peticion('/api/admin/vehiculos', { method: 'POST', body: { ...VEHICULO, [campo]: ataque }, conSesion: true });
+      assert.equal(r.status, 400, `${campo}: ${ataque}`);
+    }
+  }
+});
+
+test('Admin: __proto__ en el JSON no contamina el servidor', async () => {
+  const cuerpo = `{"__proto__": {"esAdmin": true}, "constructor": {"prototype": {"esAdmin": true}},
+    ${JSON.stringify(VEHICULO).slice(1)}`;
+  const r = await peticion('/api/admin/vehiculos', { method: 'POST', body: cuerpo, conSesion: true });
+  assert.equal(r.status, 201);
+  assert.equal({}.esAdmin, undefined);
+  assert.equal(Object.prototype.esAdmin, undefined);
+  await pool.execute('DELETE FROM vehiculos WHERE id = ?', [r.json.id]);
 });
 
 // ---------------------------------------------------------------

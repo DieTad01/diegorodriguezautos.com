@@ -1,4 +1,6 @@
-# Guía: practicar MySQL por SSH en el VPS
+# 5. Practicar MySQL por SSH
+
+[← Volver al índice](README.md)
 
 Esta guía es para practicar SQL directamente en tu VPS de Hostinger, **sin riesgo de romper el sitio**. La idea clave:
 
@@ -24,7 +26,7 @@ ssh root@IP_DEL_VPS
 
 La primera vez pregunta *"Are you sure you want to continue connecting?"*: escribe `yes`.
 
-Si ya seguiste [DEPLOY.md](DEPLOY.md), entra mejor con el usuario `deploy` (no con root):
+Si ya seguiste [04-instalacion-vps.md](04-instalacion-vps.md), entra mejor con el usuario `deploy` (no con root):
 
 ```bash
 ssh deploy@IP_DEL_VPS

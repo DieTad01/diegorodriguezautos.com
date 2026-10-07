@@ -1,4 +1,6 @@
-# Despliegue en VPS (Hostinger) — diegorodriguezautos.com
+# 4. Instalación en el VPS (Hostinger)
+
+[← Volver al índice](README.md)
 
 Arquitectura en el VPS:
 
@@ -12,7 +14,7 @@ Navegador ──HTTPS──> Nginx (80/443) ──> Node + Express (127.0.0.1:30
 - Las credenciales viven **solo** en el archivo `.env` del servidor. Nunca en GitHub.
 
 > Los comandos asumen Ubuntu 22.04/24.04 (la plantilla por defecto de Hostinger).
-> Para practicar MySQL por SSH, ve a [GUIA-MYSQL-SSH.md](GUIA-MYSQL-SSH.md).
+> Para practicar MySQL por SSH, ve a [05-practica-mysql-ssh.md](05-practica-mysql-ssh.md).
 
 ---
 
@@ -44,7 +46,7 @@ ufw allow 'Nginx Full'
 ufw enable
 ```
 
-> Recomendado: entra con llave SSH y desactiva el login por contraseña (ver la sección 1 de [GUIA-MYSQL-SSH.md](GUIA-MYSQL-SSH.md)).
+> Recomendado: entra con llave SSH y desactiva el login por contraseña (ver la sección 1 de [05-practica-mysql-ssh.md](05-practica-mysql-ssh.md)).
 
 ## 3. Instalar Node.js, Nginx, MySQL y PM2
 
@@ -135,16 +137,7 @@ Certbot renueva el certificado solo (`systemctl list-timers | grep certbot`).
 
 ## 10. Usar el panel de administración
 
-Entra a `https://diegorodriguezautos.com/admin` con el usuario del paso 6.
-
-**Fotos desde Google Drive** (no se suben al VPS, solo se guarda el enlace):
-
-1. Sube las fotos a una carpeta de tu Drive.
-2. Clic derecho en **cada imagen** → *Compartir* → Acceso general: **"Cualquier persona con el enlace"** (Lector) → *Copiar enlace*.
-3. En el panel, pega un enlace por línea en "Imágenes". La primera es la portada.
-4. *Previsualizar imágenes* para confirmar que se ven. Si sale "No se pudo cargar", la imagen no está compartida como pública.
-
-También acepta cualquier enlace directo `https://` a una imagen (por ejemplo, de otro servicio). Los enlaces de **carpetas** de Drive no sirven, y por seguridad se rechazan `http://`, `javascript:` y `data:`.
+Entra a `https://diegorodriguezautos.com/admin` con el usuario del paso 6. Cómo dar de alta autos y poner las fotos de Google Drive: [2. Panel de administración](02-panel-admin.md) y [3. Fotos desde Google Drive](03-fotos-google-drive.md).
 
 ## 11. Actualizar el sitio después de un cambio
 
@@ -159,39 +152,9 @@ Si el cambio trae tablas o columnas nuevas en `db/schema.sql`, aplícalas con `s
 
 ---
 
-## Seguridad: qué protege a este proyecto
+## Seguridad
 
-| Ataque | Protección | Dónde |
-|---|---|---|
-| Inyección SQL | Todas las consultas usan parámetros `?` (`pool.execute`); `multipleStatements` apagado; IDs solo dígitos; comodines de `LIKE` escapados; usuario MySQL sin `DROP`/`ALTER` | `src/vehiculos.js`, `src/db.js`, `src/validacion.js` |
-| Inyección HTML / XSS | Los datos se pintan con `textContent` (nunca `innerHTML`); CSP que solo permite scripts propios; la API solo responde JSON con `nosniff` | `public/js/`, `src/app.js` |
-| Enlaces de imagen maliciosos | Solo `https://`; se rechazan `javascript:`, `data:`, `http:`, usuario/contraseña en la URL; Drive se normaliza a miniatura | `src/validacion.js` |
-| Robo / falsificación de sesión | Cookie firmada HMAC, `HttpOnly`, `Secure`, `SameSite=Strict`, expira en 8 h | `src/auth.js` |
-| CSRF (otro sitio actuando como tú) | `SameSite=Strict` + revisión de `Origin` + solo JSON | `src/auth.js` |
-| Fuerza bruta al login | 5 intentos fallidos por IP cada 15 min (Node) + límite en Nginx | `src/auth.js`, `deploy/nginx.conf` |
-| Contraseña filtrada | Solo se guarda el hash scrypt en `.env` | `scripts/crear-admin.js` |
-| Descarga de `.env` / código | Solo se sirve `public/`; Nginx bloquea archivos ocultos | `src/app.js`, `deploy/nginx.conf` |
-| Errores que revelan SQL | El navegador solo recibe "Error interno"; el detalle va al log | `src/app.js` |
-| Clickjacking | `frame-ancestors 'none'` | `src/app.js` |
-
-Las pruebas automáticas de todo esto están en `test/seguridad.test.js`. Para correrlas necesitas una base de **prueba** (nunca la del sitio):
-
-```bash
-sudo mysql -e "CREATE DATABASE agencia_test; CREATE USER 'agencia_test'@'localhost' IDENTIFIED BY 'otra-clave'; GRANT ALL ON agencia_test.* TO 'agencia_test'@'localhost';"
-printf 'DB_USER=agencia_test\nDB_PASSWORD=otra-clave\nDB_NAME=agencia_test\n' > .env.test
-npm test
-```
-
-## Qué NUNCA debe ir al repositorio
-
-`.gitignore` ya bloquea esto, pero revisa antes de cada `git add`:
-
-- `.env` y `.env.test` (contraseñas de MySQL, hash del admin, `SESSION_SECRET`)
-- Llaves SSH / certificados (`*.pem`, `*.key`, `id_rsa`…)
-- Respaldos de la base de datos (`*.sql`, `*.dump`, carpeta `respaldos/`). Solo se suben `db/schema.sql` y `db/datos-ejemplo.sql`
-- `node_modules/`
-
-Si alguna vez se sube un secreto por error, **cámbialo** (contraseña nueva en MySQL, `npm run crear-admin` de nuevo): borrarlo del repo no basta, porque queda en el historial de git.
+Qué protege al sitio, cómo correr las pruebas y qué nunca debe subirse a GitHub: [6. Seguridad](06-seguridad.md).
 
 ## Problemas comunes
 
