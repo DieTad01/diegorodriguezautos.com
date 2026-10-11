@@ -10,12 +10,16 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 4 | [Instalación en el VPS](04-instalacion-vps.md) | Quien instala el sitio en Hostinger (DNS, MySQL, Nginx, HTTPS) |
 | 5 | [Practicar MySQL por SSH](05-practica-mysql-ssh.md) | Práctica de SQL en una base separada, con ejercicios resueltos |
 | 6 | [Seguridad](06-seguridad.md) | Qué protege al sitio (inyección SQL, HTML, sesión…) y cómo probarlo |
+| 7 | [Aparecer en Google](07-google.md) | Search Console, sitemap, Perfil de Negocio y qué falta para que te encuentren |
 
 ## Mapa del sitio
 
 | Dirección | Qué es | ¿Quién entra? |
 |---|---|---|
 | `https://diegorodriguezautos.com/` | Inventario de autos | Todo el público |
+| `https://diegorodriguezautos.com/autos/12-nissan-versa-2021` | Ficha de cada auto (una por vehículo, se crea sola) | Todo el público y Google |
+| `https://diegorodriguezautos.com/aviso-de-privacidad` | Aviso de privacidad | Todo el público |
+| `https://diegorodriguezautos.com/sitemap.xml` | Lista de páginas para Google (automática) | Buscadores |
 | `https://diegorodriguezautos.com/admin` | Panel de administración | Solo con usuario y contraseña |
 
 ## Flujo general

@@ -232,7 +232,9 @@ header nav .boton-llamar:hover {
 }
 
 .hero-asesor {
-  margin: 0 0 12px;
+  margin: 0 auto 12px;
+  max-width: 72ch;
+  line-height: 1.4;
   color: var(--color-oro-claro);
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -240,10 +242,12 @@ header nav .boton-llamar:hover {
   font-weight: 600;
 }
 
-.hero h1 {
+.hero-lema {
   margin: 0 auto;
   max-width: 20ch;
   font-size: clamp(1.9rem, 4.5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.2;
   text-transform: uppercase;
   letter-spacing: 0.01em;
 }
@@ -439,6 +443,16 @@ header nav .boton-llamar:hover {
 .vehiculo-titulo {
   font-size: 1.1rem;
   margin: 0;
+}
+
+.vehiculo-titulo a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.vehiculo-titulo a:hover {
+  color: var(--color-oro-claro);
+  text-decoration: underline;
 }
 
 .vehiculo-version {
@@ -709,8 +723,119 @@ footer.sitio .oro {
   width: auto;
 }
 
-.detalle > .boton {
+.detalle-acciones {
+  justify-content: flex-start;
   margin-top: 4px;
+}
+
+/* ===== Ficha de un vehículo (/autos/...) ===== */
+.migas {
+  font-size: 0.9rem;
+  color: var(--color-suave);
+  margin-bottom: 18px;
+}
+
+.migas a {
+  color: var(--color-suave);
+}
+
+.ficha-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.galeria-carril {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 8px;
+  border-radius: var(--radio);
+}
+
+.galeria-carril img {
+  flex: 0 0 100%;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  scroll-snap-align: start;
+  border-radius: var(--radio);
+  background: var(--color-superficie-2);
+}
+
+.galeria-vacia {
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radio);
+  background: var(--color-superficie-2);
+  color: var(--color-suave);
+}
+
+.ficha-galeria .ayuda {
+  margin-top: 6px;
+}
+
+.ficha-info h1 {
+  margin: 6px 0 2px;
+  font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+}
+
+.ficha-precio {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-oro);
+  margin: 8px 0 12px;
+}
+
+.ficha-info .hero-acciones {
+  justify-content: flex-start;
+}
+
+.etiqueta-ficha {
+  position: static;
+  display: inline-block;
+}
+
+.ficha-lugar {
+  margin-top: 22px;
+  color: #d9dade;
+}
+
+.ficha-descripcion {
+  margin-top: 32px;
+  max-width: 70ch;
+}
+
+.ficha-descripcion p {
+  white-space: pre-line;
+}
+
+/* ===== Páginas de texto (aviso de privacidad, 404) ===== */
+.legal {
+  max-width: 820px;
+}
+
+.legal h1 {
+  font-size: clamp(1.7rem, 3.5vw, 2.3rem);
+  margin-bottom: 4px;
+}
+
+.legal h2 {
+  font-size: 1.25rem;
+  margin-top: 32px;
+  color: var(--color-oro-claro);
+}
+
+.legal p, .legal li {
+  color: #d9dade;
+}
+
+.legal-fecha {
+  color: var(--color-suave);
+  font-size: 0.9rem;
 }
 
 @media (max-width: 860px) {
@@ -718,7 +843,7 @@ footer.sitio .oro {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .ubicacion {
+  .ubicacion, .ficha-grid {
     grid-template-columns: 1fr;
   }
 }

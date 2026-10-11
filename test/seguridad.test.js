@@ -199,7 +199,9 @@ test('XSS: el código del navegador nunca usa innerHTML ni similares', () => {
 test('XSS: las páginas no tienen scripts ni estilos en línea (los bloquea la CSP)', () => {
   for (const pagina of ['index.html', 'admin.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', 'public', pagina), 'utf8');
-    assert.doesNotMatch(html, /<script>|<script(?![^>]*\ssrc=)[^>]*>|\son[a-z]+=|style=|javascript:/i, pagina);
+    // Solo se permiten <script src="..."> y bloques de datos JSON-LD (no ejecutables)
+    const sinJsonLd = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '');
+    assert.doesNotMatch(sinJsonLd, /<script>|<script(?![^>]*\ssrc=)[^>]*>|\son[a-z]+=|style=|javascript:/i, pagina);
   }
 });
 
@@ -422,6 +424,175 @@ test('Admin: __proto__ en el JSON no contamina el servidor', async () => {
   assert.equal({}.esAdmin, undefined);
   assert.equal(Object.prototype.esAdmin, undefined);
   await pool.execute('DELETE FROM vehiculos WHERE id = ?', [r.json.id]);
+});
+
+// ---------------------------------------------------------------
+// Páginas para Google: ficha de cada auto, sitemap, robots, aviso
+// ---------------------------------------------------------------
+
+const http = require('node:http');
+const { paginaAuto } = require('../src/paginas/auto');
+
+// fetch no deja cambiar el Host; para probar www -> sin www se usa http
+function conHost(ruta, host) {
+  return new Promise((resolve, reject) => {
+    const { port } = new URL(base);
+    http.get({ host: '127.0.0.1', port, path: ruta, headers: { Host: host } }, (r) => {
+      r.resume();
+      resolve({ status: r.statusCode, location: r.headers.location });
+    }).on('error', reject);
+  });
+}
+
+function scripts(html) {
+  return [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].map((m) => ({ attrs: m[1], cuerpo: m[2] }));
+}
+
+// Lista de etiquetas con sus nombres de atributo, ignorando el texto y los valores.
+// Los valores van entre comillas dobles y escapados, así que [^"]* los consume completos.
+function estructura(html) {
+  const sinDatos = html.replace(/(<script type="application\/ld\+json">)[\s\S]*?(<\/script>)/g, '$1$2');
+  return [...sinDatos.matchAll(/<(\/?[a-zA-Z][\w-]*)((?:\s+[a-zA-Z-]+(?:="[^"]*")?)*)\s*\/?>/g)]
+    .map((m) => `${m[1]}(${[...m[2].matchAll(/([a-zA-Z-]+)(?:="[^"]*")?/g)].map((x) => x[1]).join(',')})`);
+}
+
+test('SEO: la API da la dirección de la ficha y la ficha tiene título, canónica y JSON-LD', async () => {
+  const lista = (await peticion('/api/vehiculos')).json;
+  assert.ok(lista.length > 0);
+  for (const v of lista) assert.match(v.url, /^\/autos\/\d+-[a-z0-9-]+$/);
+  const v = lista[0];
+  const r = await peticion(v.url);
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get('content-type'), /^text\/html/);
+  assert.match(r.texto, new RegExp(`<link rel="canonical" href="https://diegorodriguezautos\\.com${v.url}">`));
+  assert.match(r.texto, /<title>[^<]*León[^<]*<\/title>/);
+  const datos = scripts(r.texto).map((x) => JSON.parse(x.cuerpo));
+  const auto = datos.find((d) => d['@type'] === 'Car');
+  assert.equal(auto.offers.price, v.precio);
+  assert.equal(auto.offers.priceCurrency, 'MXN');
+  assert.ok(datos.find((d) => d['@type'] === 'BreadcrumbList'));
+});
+
+test('SEO: dirección incorrecta redirige a la canónica; inexistente o vendido da 404 sin indexar', async () => {
+  const v = (await peticion('/api/vehiculos')).json[0];
+  const id = v.url.match(/\d+/)[0];
+  for (const ruta of [`/autos/${id}`, `/autos/${id}-otro-texto`]) {
+    const r = await peticion(ruta);
+    assert.equal(r.status, 301, ruta);
+    assert.equal(r.headers.get('location'), v.url);
+  }
+  for (const ruta of ['/autos/999999-x', '/autos/abc', "/autos/1'%20OR%201=1", '/autos/0', '/no-existe']) {
+    const r = await peticion(ruta);
+    assert.equal(r.status, 404, ruta);
+    assert.match(r.texto, /<meta name="robots" content="noindex/);
+  }
+  const vendido = await peticion('/api/admin/vehiculos', { method: 'POST', body: { ...VEHICULO, estado: 'vendido' }, conSesion: true });
+  assert.equal((await peticion(`/autos/${vendido.json.id}`)).status, 404);
+  await pool.execute('DELETE FROM vehiculos WHERE id = ?', [vendido.json.id]);
+});
+
+test('XSS: la ficha generada en el servidor escapa todos los campos y el JSON-LD', async () => {
+  const ataques = {
+    marca: '<script>alert(1)</script>',
+    modelo: '"><img src=x onerror=alert(2)>',
+    version: '</script><script>alert(3)</script>',
+    color: "' onmouseover='alert(4)",
+    descripcion: '<iframe src="javascript:alert(5)"></iframe>\n</title><svg onload=alert(6)>',
+  };
+  const fotoBuena = 'https://ejemplo.com/foto.jpg';
+  const r = await peticion('/api/admin/vehiculos', {
+    method: 'POST', body: { ...VEHICULO, ...ataques, imagenes: [fotoBuena] }, conSesion: true,
+  });
+  assert.equal(r.status, 201);
+  // Además, una foto maliciosa metida directo en MySQL (saltando la validación)
+  await pool.execute('INSERT INTO vehiculo_imagenes (vehiculo_id, url, orden) VALUES (?, ?, 5)', [r.json.id, 'javascript:alert(7)']);
+
+  const v = (await peticion('/api/vehiculos')).json.find((x) => x.id === r.json.id);
+  assert.match(v.url, /^\/autos\/\d+-[a-z0-9-]+$/, 'la dirección solo lleva letras, números y guiones');
+  const html = (await peticion(v.url)).texto;
+
+  // Prueba estructural: la página con ataques debe tener EXACTAMENTE las mismas etiquetas
+  // y atributos que la misma página con datos normales. Si un ataque lograra inyectar
+  // una etiqueta (<script>, <img>…) o un atributo (onerror=…), la estructura cambiaría.
+  const normal = paginaAuto({ ...VEHICULO, id: r.json.id, imagenes: [fotoBuena] });
+  assert.ok(estructura(normal).length > 60, 'la comparación revisa la página completa');
+  assert.deepEqual(estructura(html), estructura(normal));
+  assert.ok(html.includes('&#39; onmouseover=&#39;alert(4)'), 'la comilla del color queda escapada');
+
+  const tags = scripts(html);
+  assert.ok(tags.length >= 2);
+  for (const t of tags) {
+    assert.equal(t.attrs, ' type="application/ld+json"', 'solo bloques de datos, ningún script ejecutable');
+    assert.doesNotMatch(t.cuerpo, /<|>/, 'el JSON-LD no contiene < ni >, no puede cerrar la etiqueta');
+  }
+  const auto = tags.map((t) => JSON.parse(t.cuerpo)).find((d) => d['@type'] === 'Car');
+  assert.equal(auto.brand.name, ataques.marca, 'el dato se conserva exacto dentro del JSON');
+  assert.deepEqual(auto.image, [fotoBuena], 'la foto javascript: no se publica');
+  assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'se muestra como texto');
+  await pool.execute('DELETE FROM vehiculos WHERE id = ?', [r.json.id]);
+});
+
+test('SEO: sitemap.xml lista portada, fichas disponibles y aviso; no lista vendidos', async () => {
+  const vendido = await peticion('/api/admin/vehiculos', { method: 'POST', body: { ...VEHICULO, estado: 'vendido' }, conSesion: true });
+  const r = await peticion('/sitemap.xml');
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get('content-type'), /^application\/xml/);
+  assert.match(r.texto, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
+  assert.match(r.texto, /<loc>https:\/\/diegorodriguezautos\.com\/<\/loc>/);
+  assert.match(r.texto, /<loc>https:\/\/diegorodriguezautos\.com\/aviso-de-privacidad<\/loc>/);
+  for (const v of (await peticion('/api/vehiculos')).json) {
+    assert.ok(r.texto.includes(`<loc>https://diegorodriguezautos.com${v.url}</loc>`), v.url);
+  }
+  assert.doesNotMatch(r.texto, new RegExp(`/autos/${vendido.json.id}-`));
+  await pool.execute('DELETE FROM vehiculos WHERE id = ?', [vendido.json.id]);
+});
+
+test('SEO: robots.txt bloquea el admin, deja la API pública y anuncia el sitemap', async () => {
+  const r = await peticion('/robots.txt');
+  assert.equal(r.status, 200);
+  assert.match(r.texto, /^Disallow: \/admin$/m);
+  assert.match(r.texto, /^Disallow: \/api\/admin\/$/m);
+  assert.doesNotMatch(r.texto, /^Disallow: \/api\/?$/m, 'Google necesita /api/vehiculos para ver el inventario');
+  assert.match(r.texto, /^Sitemap: https:\/\/diegorodriguezautos\.com\/sitemap\.xml$/m);
+  assert.match((await peticion('/admin')).headers.get('x-robots-tag'), /noindex/);
+});
+
+test('SEO: la portada tiene título, descripción, canónica y datos del negocio válidos', async () => {
+  const html = (await peticion('/')).texto;
+  assert.match(html, /<html lang="es-MX">/);
+  assert.match(html, /<title>[^<]*BYD y Chevrolet[^<]*León[^<]*<\/title>/);
+  const desc = html.match(/<meta name="description" content="([^"]+)">/)[1];
+  assert.ok(desc.length <= 160, `descripción de ${desc.length} caracteres`);
+  assert.match(html, /<link rel="canonical" href="https:\/\/diegorodriguezautos\.com\/">/);
+  assert.match(html, /<h1[^>]*>[^<]*BYD y Chevrolet en León/);
+  assert.match(html, /href="\/aviso-de-privacidad"/);
+  const datos = JSON.parse(scripts(html).find((t) => t.attrs.includes('ld+json')).cuerpo);
+  const negocio = datos['@graph'].find((d) => d['@type'] === 'AutoDealer');
+  assert.equal(negocio.address.postalCode, '37530');
+  assert.equal(negocio.address.addressLocality, 'León');
+  assert.equal(negocio.telephone, '+52 477 732 1263');
+});
+
+test('Privacidad: el aviso existe, cita la ley vigente y tiene dirección fija', async () => {
+  const r = await peticion('/aviso-de-privacidad');
+  assert.equal(r.status, 200);
+  for (const texto of ['Responsable', 'Finalidades', 'ARCO', 'Secretaría Anticorrupción y Buen Gobierno', 'Cookies', '20 días hábiles']) {
+    assert.ok(r.texto.includes(texto), texto);
+  }
+  assert.doesNotMatch(r.texto, /INAI/, 'el INAI ya no existe');
+  assert.match(r.texto, /<link rel="canonical" href="https:\/\/diegorodriguezautos\.com\/aviso-de-privacidad">/);
+  const viejo = await peticion('/privacidad');
+  assert.equal(viejo.status, 301);
+  assert.equal(viejo.headers.get('location'), '/aviso-de-privacidad');
+});
+
+test('SEO: www redirige al dominio sin www y no sirve para mandar a otro sitio', async () => {
+  const r = await conHost('/autos/1-x?a=1', 'www.diegorodriguezautos.com');
+  assert.equal(r.status, 301);
+  assert.equal(r.location, 'https://diegorodriguezautos.com/autos/1-x?a=1');
+  const raro = await conHost('//sitio-malo.com/x', 'www.diegorodriguezautos.com');
+  assert.equal(raro.status, 301);
+  assert.match(raro.location, /^https:\/\/diegorodriguezautos\.com\/sitio-malo\.com\/x$/);
 });
 
 // ---------------------------------------------------------------

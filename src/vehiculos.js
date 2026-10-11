@@ -5,6 +5,7 @@
 // =============================================================
 const pool = require('./db');
 const { escaparLike } = require('./validacion');
+const { rutaAuto } = require('./sitio');
 
 const COLUMNAS = `id, marca, modelo, anio, version, precio, kilometraje, color,
   transmision, descripcion, estado`;
@@ -23,7 +24,7 @@ async function conImagenes(vehiculos) {
   );
   const porVehiculo = new Map(ids.map((id) => [id, []]));
   for (const img of imagenes) porVehiculo.get(img.vehiculo_id).push(img.url);
-  return vehiculos.map((v) => ({ ...v, imagenes: porVehiculo.get(v.id) }));
+  return vehiculos.map((v) => ({ ...v, url: rutaAuto(v), imagenes: porVehiculo.get(v.id) }));
 }
 
 // Inventario público: lo que no está vendido, con búsqueda opcional
@@ -46,6 +47,15 @@ async function obtenerPublico(id) {
   );
   const [vehiculo] = await conImagenes(filas);
   return vehiculo || null;
+}
+
+// Para sitemap.xml: solo lo publicado (no vendidos) y su fecha de cambio
+async function listarParaSitemap() {
+  const [filas] = await pool.execute(
+    `SELECT id, marca, modelo, anio, actualizado_en FROM vehiculos
+     WHERE estado <> 'vendido' ORDER BY id`,
+  );
+  return filas;
 }
 
 async function listarTodos() {
@@ -118,4 +128,4 @@ async function eliminar(id) {
   return r.affectedRows > 0;
 }
 
-module.exports = { listarPublicos, obtenerPublico, listarTodos, crear, actualizar, eliminar };
+module.exports = { listarPublicos, obtenerPublico, listarParaSitemap, listarTodos, crear, actualizar, eliminar };

@@ -9,6 +9,11 @@ const estadoLista = document.getElementById('estado-lista');
 const plantilla = document.getElementById('tpl-vehiculo');
 const dialogo = document.getElementById('detalle');
 
+// La API manda la dirección de la ficha (/autos/12-nissan-versa-2021); solo se acepta ese formato
+function rutaFicha(url) {
+  return typeof url === 'string' && /^\/autos\/\d+(-[a-z0-9-]+)?$/.test(url);
+}
+
 // 1) Pedir los vehículos a la API
 async function cargarVehiculos(busqueda = '') {
   estadoLista.textContent = 'Cargando…';
@@ -45,7 +50,9 @@ function mostrarVehiculos(vehiculos) {
       etiqueta.textContent = ESTADO.apartado;
       etiqueta.hidden = false;
     }
-    tarjeta.querySelector('.vehiculo-titulo').textContent = titulo(v);
+    const enlace = tarjeta.querySelector('.vehiculo-titulo a');
+    enlace.textContent = titulo(v);
+    if (rutaFicha(v.url)) enlace.href = v.url;
     tarjeta.querySelector('.vehiculo-version').textContent = v.version || '';
     tarjeta.querySelector('.vehiculo-precio').textContent = formatoPrecio.format(v.precio);
     tarjeta.querySelector('.dato-km').textContent = `${formatoNumero.format(v.kilometraje)} km`;
@@ -93,6 +100,9 @@ function abrirDetalle(v) {
     crear('li', ESTADO[v.estado] || ''),
   );
   dialogo.querySelector('.detalle-descripcion').textContent = v.descripcion || '';
+  const ficha = dialogo.querySelector('.detalle-ficha');
+  ficha.hidden = !rutaFicha(v.url);
+  if (!ficha.hidden) ficha.href = v.url;
   dialogo.showModal();
 }
 

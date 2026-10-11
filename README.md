@@ -23,7 +23,8 @@ Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet*
 | | **PM2** | Keeps the Node process alive and restarts it on boot |
 | | **Let's Encrypt** (Certbot) | Free HTTPS certificate with auto-renewal |
 | | **UFW** | Firewall: only SSH, HTTP and HTTPS are open |
-| Testing | **node:test** (built-in test runner) | 26 security tests against a real MySQL test database |
+| SEO | Server-rendered vehicle pages, schema.org JSON-LD (`AutoDealer`, `Car`, `BreadcrumbList`), dynamic `sitemap.xml`, `robots.txt`, canonical URLs, Open Graph | Discoverability on Google and link previews |
+| Testing | **node:test** (built-in test runner) | 34 security and SEO tests against a real MySQL test database |
 
 ## Architecture
 
@@ -47,7 +48,9 @@ src/                     Server code (never served)
   db.js                  MySQL connection pool
   validacion.js          Whitelist input validation and image URL normalization
   vehiculos.js           All SQL queries (parameterized)
-  routes/                Public API and admin API
+  sitio.js               Business details (address, phone) and URL slugs
+  paginas/               Server-rendered pages: vehicle detail, privacy notice, 404 (all output escaped)
+  routes/                Public API, admin API and server-rendered pages
 db/schema.sql            Tables and constraints
 db/datos-ejemplo.sql     Sample data for SQL practice
 scripts/crear-admin.js   Generates the admin password hash and session secret
@@ -59,7 +62,7 @@ docs/                    User manual and guides (Spanish)
 ## Security
 
 - **SQL injection:** every query uses prepared statements; multiple statements are disabled; IDs, enums and numeric fields are strictly validated; `LIKE` wildcards are escaped. The production database user only has `SELECT, INSERT, UPDATE, DELETE`.
-- **HTML injection / XSS:** no `innerHTML` anywhere; all data is rendered as text. The CSP allows only same-origin scripts and styles, with no inline code.
+- **HTML injection / XSS:** no `innerHTML` anywhere; all data is rendered as text. Server-rendered pages escape every value (`esc()`), and JSON-LD escapes `<`, `>` and `&` so data can never close its `<script>` block. The CSP allows only same-origin scripts and styles, with no inline code.
 - **Admin access control:** single admin with a `scrypt` password hash; an HMAC-signed cookie that is `HttpOnly`, `Secure` and `SameSite=Strict` with an 8-hour expiry; Origin checks and JSON-only request bodies against CSRF; brute-force limits in both Node and Nginx.
 - **Image links:** only `https://` URLs are accepted; `javascript:`, `data:` and `http:` are rejected.
 - **Secrets:** stored only in `.env` on the server; `.gitignore` blocks env files, keys and database dumps.
@@ -97,3 +100,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 4. [VPS installation](docs/04-instalacion-vps.md): DNS, MySQL, PM2, Nginx, HTTPS on Hostinger
 5. [MySQL practice over SSH](docs/05-practica-mysql-ssh.md): separate practice database with solved exercises
 6. [Security](docs/06-seguridad.md): protections and how they were tested
+7. [Getting found on Google](docs/07-google.md): Search Console, sitemap, Business Profile and what is still missing

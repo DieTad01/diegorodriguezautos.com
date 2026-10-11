@@ -19,6 +19,8 @@
 |---|---|---|
 | Inyección SQL | Todas las consultas usan parámetros `?` (`pool.execute`); `multipleStatements` apagado; IDs solo dígitos; comodines de `LIKE` escapados; tipos estrictos (no se aceptan objetos ni arreglos donde va texto); el usuario MySQL del sitio no tiene `DROP`/`ALTER` | `src/vehiculos.js`, `src/db.js`, `src/validacion.js` |
 | Inyección HTML / XSS | Los datos se pintan con `textContent` y `<template>`, nunca con `innerHTML`; CSP que solo permite scripts propios (sin scripts en línea); la API solo responde JSON con `nosniff` | `public/js/`, `src/app.js` |
+| Inyección HTML en páginas del servidor (fichas `/autos/…`) | Todo dato pasa por `esc()` (texto y atributos); el JSON-LD escapa `<`, `>` y `&` para que nada cierre el `<script>`; las fotos se publican solo si son `https://` | `src/paginas/html.js`, `src/paginas/auto.js` |
+| Redirección abierta | La redirección de `www` usa una dirección fija (`SITIO_URL`), nunca el `Host` que manda el navegador | `src/app.js` |
 | Enlaces de imagen maliciosos | Solo `https://`; se rechazan `javascript:`, `data:`, `http:`, usuario/contraseña en la URL; Drive se normaliza a miniatura | `src/validacion.js` |
 | Robo / falsificación de sesión | Cookie firmada, `HttpOnly`, `Secure`, `SameSite=Strict`, 8 h | `src/auth.js` |
 | CSRF (otro sitio actuando como tú) | `SameSite=Strict` + revisión de `Origin`/`Sec-Fetch-Site` + solo JSON | `src/auth.js` |
@@ -30,13 +32,14 @@
 
 ## Lo que se probó en el panel de administración
 
-Las pruebas automáticas (`test/seguridad.test.js`, 26 pruebas) y una prueba en navegador real (Chromium) verificaron, **ya dentro del panel con sesión iniciada**:
+Las pruebas automáticas (`test/seguridad.test.js`, 34 pruebas) y una prueba en navegador real (Chromium) verificaron, **ya dentro del panel con sesión iniciada**:
 
 - **Login:** usuarios y contraseñas como `' OR '1'='1`, `admin' -- `, `<script>…</script>`, objetos `{"$ne": null}`, arreglos y textos de 10,000 caracteres. Ninguno entra ni crea sesión.
 - **Cada campo de texto** (marca, modelo, versión, color, descripción), **al crear y al editar**, con 14 ataques (todos los que caben en el largo máximo de cada campo): `'; DROP TABLE vehiculos; --`, `' UNION SELECT …`, `' AND SLEEP(5) …`, `<script>`, `<img onerror>`, `<svg onload>`, `<iframe>`, `javascript:`, plantillas `{{…}}`, etc. Todos se guardan **literalmente como texto**, no se borra ni se duplica ninguna fila, ninguna otra tabla cambia y las 5 tablas siguen existiendo.
 - **Estado y transmisión:** solo aceptan exactamente sus opciones.
 - **En el navegador:** con ataques en todos los campos, ni el panel (lista, formulario de edición, diálogo de confirmación al borrar) ni la página pública ejecutan nada; todo se ve como texto plano.
 - **Sesión:** cookies inventadas, alteradas o vencidas no sirven; peticiones desde otro sitio se rechazan.
+- **Fichas generadas en el servidor:** un auto con ataques en todos sus campos (`<script>`, `"><img onerror>`, `</script><script>`, comillas que intentan abrir atributos, `<iframe src="javascript:">`) y una foto `javascript:` metida directo en MySQL. La prueba compara la **estructura** de la página (etiquetas y atributos) con la misma página con datos normales: deben ser idénticas. Se comprobó que la prueba falla si se quita el escape en la descripción, en un atributo `alt` o en el JSON-LD. En Chromium, nada se ejecuta.
 
 ### Correr las pruebas
 

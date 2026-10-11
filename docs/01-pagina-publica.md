@@ -75,7 +75,26 @@ Para cambiar la dirección o el teléfono se editan `public/index.html` (aparece
 
 ![Pie de página](img/publico-pie.png)
 
-Repite el logo, la dirección y el teléfono para que estén a la mano desde cualquier parte de la página.
+Repite el logo, la dirección y el teléfono para que estén a la mano desde cualquier parte de la página, y tiene el enlace al **Aviso de privacidad**.
+
+## Ficha de cada auto
+
+Cada auto tiene **su propia página**, por ejemplo `diegorodriguezautos.com/autos/6-honda-cr-v-2022`. Se llega desde el **nombre** del auto en su tarjeta o con el botón **Ver ficha completa** de la ventana de detalle.
+
+![Ficha de un auto](img/ficha-auto.png)
+
+- Muestra todas las fotos (en el celular se deslizan con el dedo), precio, datos, descripción, botones **Me interesa · Llamar** y **Cómo llegar**, y dónde verlo.
+- Es el **link ideal para compartir** por WhatsApp o redes: la vista previa muestra la primera foto del auto.
+- Es la página que Google muestra cuando alguien busca ese auto (ver [7. Aparecer en Google](07-google.md)).
+- Se crea sola al agregar el auto en el panel, se actualiza al editarlo y deja de existir cuando se marca como **Vendido** (muestra "No encontramos esta página" con un botón al inventario).
+
+## Aviso de privacidad
+
+En `diegorodriguezautos.com/aviso-de-privacidad` (enlace en el pie de página de todas las páginas).
+
+![Aviso de privacidad](img/aviso-privacidad.png)
+
+Para cambiar su texto se edita `src/paginas/aviso-de-privacidad.html` (y la fecha de "Última actualización").
 
 ## En el celular
 

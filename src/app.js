@@ -8,6 +8,8 @@ const express = require('express');
 const helmet = require('helmet');
 const rutasVehiculos = require('./routes/vehiculos');
 const rutasAdmin = require('./routes/admin');
+const paginas = require('./routes/paginas');
+const { URL_SITIO } = require('./sitio');
 
 const PUBLICO = path.join(__dirname, '..', 'public');
 
@@ -17,6 +19,16 @@ function crearApp() {
 
   app.disable('x-powered-by');
   app.set('trust proxy', 'loopback'); // Nginx está delante, en la misma máquina
+
+  // Una sola dirección para Google: www.diegorodriguezautos.com -> diegorodriguezautos.com
+  const hostCanonico = new URL(URL_SITIO).hostname;
+  app.use((req, res, next) => {
+    if (req.hostname === `www.${hostCanonico}`) {
+      // Destino fijo (URL_SITIO) + ruta: no se puede usar para redirigir a otro sitio
+      return res.redirect(301, URL_SITIO + req.originalUrl.replace(/^\/+/, '/'));
+    }
+    next();
+  });
 
   // Cabeceras de seguridad. La CSP le dice al navegador que solo ejecute
   // scripts y estilos de este dominio: aunque alguien lograra meter
@@ -48,6 +60,10 @@ function crearApp() {
     next();
   });
   app.use('/api/vehiculos', rutasVehiculos);
+  app.use('/api/admin', (req, res, next) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
   app.use('/api/admin', rutasAdmin);
   app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
@@ -57,10 +73,19 @@ function crearApp() {
     res.set('X-Robots-Tag', 'noindex, nofollow');
     res.sendFile(path.join(PUBLICO, 'admin.html'));
   });
-  app.use(express.static(PUBLICO, { dotfiles: 'deny' }));
+  app.use(paginas.router);
+  app.use(express.static(PUBLICO, {
+    dotfiles: 'deny',
+    setHeaders(res, ruta) {
+      // Imágenes: 7 días en caché; CSS/JS: 1 hora; HTML: siempre revisar
+      if (/[\\/]img[\\/]/.test(ruta)) res.set('Cache-Control', 'public, max-age=604800');
+      else if (/\.(css|js)$/.test(ruta)) res.set('Cache-Control', 'public, max-age=3600');
+      else res.set('Cache-Control', 'no-cache');
+    },
+  }));
 
   app.use((req, res) => {
-    res.status(404).type('text').send('No encontrado');
+    paginas.enviarHtml(res, paginas.paginaNoEncontrada(), 404);
   });
 
   // Nunca se manda al navegador el detalle del error (podría revelar SQL)
@@ -68,7 +93,7 @@ function crearApp() {
     if (res.headersSent) return next(err);
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'JSON inválido' });
     if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Datos demasiado grandes' });
-    if (err.status === 403 || err.status === 404) return res.status(404).type('text').send('No encontrado');
+    if (err.status === 403 || err.status === 404) return paginas.enviarHtml(res, paginas.paginaNoEncontrada(), 404);
     console.error(err);
     res.status(500).json({ error: 'Error interno del servidor' });
   });

@@ -37,7 +37,7 @@ Aquí aparecen **todos** los autos, incluidos los vendidos, con:
 1. Presiona **+ Agregar vehículo**.
 2. Llena el formulario. Los campos con `*` son obligatorios.
 3. Pega los links de las fotos (ver abajo).
-4. Presiona **Guardar**. El auto aparece de inmediato en la lista y en la página pública (si no está "Vendido").
+4. Presiona **Guardar**. El auto aparece de inmediato en la lista y en la página pública (si no está "Vendido"), y se crea su **ficha** propia (`/autos/…`) que Google puede encontrar.
 
 ![Formulario](img/admin-formulario.png)
 
