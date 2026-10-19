@@ -17,6 +17,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 10 | [Inventario paso a paso](10-inventario-paso-a-paso.md) | Guía rápida del día a día (la misma de la ⭐) |
 | 11 | [**Tus accesos (desarrollador)**](11-acceso-desarrollador.md) | Tu llave SSH, GitHub, tu cuenta del panel y cómo darle acceso a tu cliente |
 | 12 | [**Guía para el cliente**](12-guia-cliente.md) · [PDF](guia-cliente.pdf) | Para Diego Rodríguez: entrar al panel, cambiar su contraseña, agregar autos y fotos. Sin datos del servidor |
+| 13 | [**MariaDB visual**](13-mariadb-visual.md) | Ver y manejar la base con DBeaver o HeidiSQL desde tu computadora, por túnel SSH |
 
 ## Comandos del servidor (en hPanel → VPS → Terminal)
 
@@ -28,6 +29,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | Crear la cuenta de alguien (por ejemplo, tu cliente) | `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh agregar diego.rodriguez` |
 | Poner contraseña nueva a una cuenta (la olvidó) | `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh contrasena <usuario>` |
 | Quitar una cuenta | `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh quitar <usuario>` |
+| Usuario de MariaDB para DBeaver/HeidiSQL | `bash /var/www/diegorodriguezautos.com/deploy/usuario-bd-visual.sh` |
 | Preparar el VPS para un repositorio privado | `bash /var/www/diegorodriguezautos.com/deploy/llave-github.sh` |
 | Reinstalar o aplicar cambios de Nginx/HTTPS | `bash /var/www/diegorodriguezautos.com/deploy/instalar.sh` |
 | **El sitio no abre: revisar todo y decir qué hacer** | `bash /var/www/diegorodriguezautos.com/deploy/diagnostico.sh` |

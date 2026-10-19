@@ -13,6 +13,8 @@ La idea clave:
 | `agencia_autos` | `agencia_app` | La del sitio real. Solo lee y escribe filas. **No se practica aquí.** |
 | `agencia_practica` | `practica` | Tu laboratorio. Puedes crear, borrar y romper lo que quieras. |
 
+> ¿Prefieres ver las tablas con un programa visual en lugar de la terminal? Ver [13. MariaDB visual](13-mariadb-visual.md).
+
 Las dos tienen las mismas tablas (`db/schema.sql`), así que lo que aprendas aplica directo al sitio.
 
 ---
