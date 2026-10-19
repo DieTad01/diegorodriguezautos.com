@@ -13,7 +13,8 @@ Navegador ──HTTPS──> Nginx (80/443) ──> Node + Express (127.0.0.1:30
 - Node y MySQL solo escuchan en `127.0.0.1`: desde internet solo se llega por Nginx.
 - Las credenciales viven **solo** en el archivo `.env` del servidor. Nunca en GitHub.
 
-> Los comandos asumen Ubuntu 22.04/24.04 (la plantilla por defecto de Hostinger).
+> El instalador automático funciona en **Debian 13 / 12** y **Ubuntu 24.04 / 22.04**. En Debian la base de datos es **MariaDB** (compatible con MySQL; el sitio y sus 34 pruebas se probaron en MariaDB 11.8, la versión de Debian 13).
+> Los comandos manuales de abajo están escritos para Ubuntu; en Debian cambia: paquete `mariadb-server` en vez de `mysql-server`, `sudo mariadb` en vez de `sudo mysql` y `mariadb-secure-installation` en vez de `mysql_secure_installation`.
 > Para practicar MySQL por SSH, ve a [05-practica-mysql-ssh.md](05-practica-mysql-ssh.md).
 
 ---
@@ -35,7 +36,7 @@ Navegador ──HTTPS──> Nginx (80/443) ──> Node + Express (127.0.0.1:30
 
 - Si el DNS todavía no apunta al VPS, instala todo menos HTTPS y te dice qué falta; cuando propague, vuelve a correr `bash instalar.sh`.
 - **Para actualizar el sitio** después de cambios en GitHub: vuelve a correr `bash instalar.sh`. No borra datos ni cambia contraseñas.
-- Si el puerto 80 ya lo usa otro programa (plantillas de VPS con panel como CyberPanel), se detiene y te pide reinstalar el VPS con **Ubuntu 24.04** sin panel.
+- Si el puerto 80 ya lo usa otro programa (plantillas de VPS con panel como CyberPanel), se detiene y te pide reinstalar el VPS con **Debian 13** o **Ubuntu 24.04** sin panel.
 
 Si prefieres hacerlo a mano o entender cada paso, sigue la guía completa:
 

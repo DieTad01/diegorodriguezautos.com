@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================
 # instalar.sh — instala o actualiza diegorodriguezautos.com en un
-# VPS Ubuntu (Hostinger). Hace todo lo de docs/04-instalacion-vps.md.
+# VPS Debian 13 / 12 o Ubuntu 24.04 / 22.04 (Hostinger).
+# Hace todo lo de docs/04-instalacion-vps.md.
 #
 # Uso, como root en la terminal del VPS (hPanel → VPS → Terminal):
 #   curl -fsSLo instalar.sh https://raw.githubusercontent.com/DieTad01/diegorodriguezautos.com/claude/pensive-heisenberg-v62n8s/deploy/instalar.sh
@@ -37,16 +38,21 @@ exec </dev/null
 
 # ---------- 0. Revisiones ----------
 [ "$(id -u)" -eq 0 ] || falla "Corre este script como root (o con: sudo bash instalar.sh)."
-# shellcheck disable=SC1091
-. /etc/os-release
-[ "${ID:-}" = "ubuntu" ] || falla "Este instalador es para Ubuntu y tu VPS tiene: ${PRETTY_NAME:-desconocido}."
+# shellcheck disable=SC1090
+. "${OS_RELEASE:-/etc/os-release}"   # OS_RELEASE: solo para pruebas
+case "${ID:-}" in
+  debian) DB_PAQUETE="mariadb-server"; DB_SERVICIO="mariadb"; DB_NOMBRE_VISIBLE="MariaDB" ;;  # Debian trae MariaDB (compatible con MySQL)
+  ubuntu) DB_PAQUETE="mysql-server";   DB_SERVICIO="mysql";   DB_NOMBRE_VISIBLE="MySQL" ;;
+  *) falla "Este instalador es para Debian o Ubuntu y tu VPS tiene: ${PRETTY_NAME:-desconocido}." ;;
+esac
+ok "Sistema: ${PRETTY_NAME:-$ID} · base de datos: $DB_NOMBRE_VISIBLE"
 
 if command -v ss >/dev/null; then
   OCUPA_80="$(ss -ltnpH 'sport = :80' 2>/dev/null | grep -v nginx || true)"
   if [ -n "$OCUPA_80" ]; then
     aviso "El puerto 80 ya lo usa otro programa:"
     echo "$OCUPA_80"
-    falla "Tu VPS parece tener una plantilla con panel (Apache, OpenLiteSpeed, CyberPanel...). Reinstálalo con la plantilla 'Ubuntu 24.04' sin panel (hPanel → VPS → Sistema operativo) y vuelve a correr este script."
+    falla "Tu VPS parece tener una plantilla con panel (Apache, OpenLiteSpeed, CyberPanel...). Reinstálalo con la plantilla 'Debian 13' o 'Ubuntu 24.04' sin panel (hPanel → VPS → Sistema operativo) y vuelve a correr este script."
   fi
 fi
 
@@ -54,20 +60,26 @@ fi
 paso "1/9 Instalando paquetes (puede tardar unos minutos)"
 export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
 apt-get update -qq
-apt-get install -y -qq curl git nginx mysql-server ufw certbot python3-certbot-nginx openssl dnsutils ca-certificates >/dev/null
-ok "Nginx, MySQL, Git y Certbot listos"
+apt-get install -y -qq curl git nginx "$DB_PAQUETE" ufw certbot python3-certbot-nginx openssl ca-certificates sudo iproute2 >/dev/null
+ok "Nginx, $DB_NOMBRE_VISIBLE, Git y Certbot listos"
 
 NODE_MAYOR="$(node -v 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/' || echo 0)"
 if [ "${NODE_MAYOR:-0}" -lt 20 ]; then
-  curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null
-  apt-get install -y -qq nodejs >/dev/null
+  # Node 22 del repositorio oficial; si no está disponible, el de la distribución (Debian 13 trae Node 20)
+  if curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1; then
+    apt-get install -y -qq nodejs >/dev/null
+  else
+    apt-get install -y -qq nodejs npm >/dev/null
+  fi
+  NODE_MAYOR="$(node -v | sed -E 's/^v([0-9]+).*/\1/')"
+  [ "$NODE_MAYOR" -ge 20 ] || falla "Se necesita Node.js 20 o más nuevo y se instaló $(node -v)."
 fi
 command -v pm2 >/dev/null || npm install -g pm2 --silent >/dev/null
 ok "Node.js $(node -v) y PM2 listos"
 
 # ---------- 2. Usuario sin privilegios para la app ----------
 paso "2/9 Usuario '$USUARIO_APP' para correr el sitio"
-id "$USUARIO_APP" >/dev/null 2>&1 || adduser --disabled-password --gecos "" "$USUARIO_APP" >/dev/null
+id "$USUARIO_APP" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$USUARIO_APP"
 ok "Usuario listo (no tiene contraseña ni permisos de administrador)"
 
 # ---------- 3. Código ----------
@@ -86,24 +98,28 @@ como_app "cd '$DIR' && npm ci --omit=dev --no-audit --no-fund --silent"
 ok "Dependencias instaladas ($(como_app "cd '$DIR' && git log -1 --format='%h %s'"))"
 
 # ---------- 4. Base de datos ----------
-paso "4/9 Base de datos MySQL"
-if [ "$SIN_SISTEMA" = 1 ]; then service mysql start >/dev/null 2>&1 || true; else systemctl enable --now mysql >/dev/null 2>&1; fi
-mysql -e "DELETE FROM mysql.user WHERE User=''; DROP DATABASE IF EXISTS test; FLUSH PRIVILEGES;"
+paso "4/9 Base de datos $DB_NOMBRE_VISIBLE"
+if [ "$SIN_SISTEMA" = 1 ]; then service "$DB_SERVICIO" start >/dev/null 2>&1 || true; else systemctl enable --now "$DB_SERVICIO" >/dev/null 2>&1; fi
+# Cliente: en Debian se llama "mariadb" (puede no existir "mysql")
+SQL_CLIENTE="$(command -v mariadb || command -v mysql)" || falla "No se encontró el cliente de $DB_NOMBRE_VISIBLE."
+sql() { "$SQL_CLIENTE" "$@"; }
+# Quitar usuarios anónimos y la base de prueba (lo que hace mysql_secure_installation)
+sql -e "DROP USER IF EXISTS ''@'localhost'; DROP USER IF EXISTS ''@'%'; DROP USER IF EXISTS ''@'$(hostname)'; DROP DATABASE IF EXISTS test; FLUSH PRIVILEGES;"
 
 ENV="$DIR/.env"
 DB_PASSWORD=""
 [ -f "$ENV" ] && DB_PASSWORD="$(sed -n 's/^DB_PASSWORD=//p' "$ENV" | head -1)"
 case "$DB_PASSWORD" in ''|cambia-esta-contraseña) DB_PASSWORD="$(openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | cut -c1-28)";; esac
-[[ "$DB_PASSWORD" =~ ^[A-Za-z0-9]{16,}$ ]] || falla "La contraseña de MySQL en $ENV tiene caracteres no esperados; cámbiala por letras y números."
+[[ "$DB_PASSWORD" =~ ^[A-Za-z0-9]{16,}$ ]] || falla "La contraseña de la base de datos en $ENV tiene caracteres no esperados; cámbiala por letras y números."
 
-mysql <<SQL
+sql <<SQL
 CREATE DATABASE IF NOT EXISTS \`$DB_NOMBRE\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USUARIO'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
 ALTER USER '$DB_USUARIO'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
 GRANT SELECT, INSERT, UPDATE, DELETE ON \`$DB_NOMBRE\`.* TO '$DB_USUARIO'@'localhost';
 FLUSH PRIVILEGES;
 SQL
-mysql "$DB_NOMBRE" < "$DIR/db/schema.sql"
+sql "$DB_NOMBRE" < "$DIR/db/schema.sql"
 ok "Base '$DB_NOMBRE' y usuario '$DB_USUARIO' (solo leer/escribir filas) listos; tablas creadas"
 
 # ---------- 5. Archivo .env (secretos, solo en el servidor) ----------
@@ -187,9 +203,10 @@ paso "8/9 Firewall (solo SSH, HTTP y HTTPS)"
 if [ "$SIN_SISTEMA" != 1 ]; then
   PUERTO_SSH="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"
   ufw allow "${PUERTO_SSH:-22}/tcp" >/dev/null
-  ufw allow 'Nginx Full' >/dev/null
+  ufw allow 80/tcp >/dev/null
+  ufw allow 443/tcp >/dev/null
   ufw --force enable >/dev/null
-  ok "Abiertos: SSH (${PUERTO_SSH:-22}), 80 y 443. MySQL (3306) y Node (3000) quedan cerrados"
+  ok "Abiertos: SSH (${PUERTO_SSH:-22}), 80 y 443. La base de datos (3306) y Node (3000) quedan cerrados"
 else
   ok "(omitido en modo prueba)"
 fi
@@ -197,8 +214,10 @@ fi
 # ---------- 9. HTTPS ----------
 paso "9/9 HTTPS con Let's Encrypt"
 IP_VPS="$(curl -4fs --max-time 10 https://api.ipify.org || true)"
-IP_DOM="$(dig +short A "$DOMINIO" | tail -1)"
-IP_WWW="$(dig +short A "www.$DOMINIO" | tail -1)"
+# getent viene con cualquier Linux (no hace falta instalar dig); sigue los CNAME
+ip_de() { getent ahostsv4 "$1" 2>/dev/null | awk 'NR==1{print $1}' || true; }
+IP_DOM="$(ip_de "$DOMINIO")"
+IP_WWW="$(ip_de "www.$DOMINIO")"
 if [ "$SIN_SISTEMA" = 1 ]; then
   ok "(omitido en modo prueba)"
 elif [ -n "$IP_VPS" ] && [ "$IP_DOM" = "$IP_VPS" ]; then

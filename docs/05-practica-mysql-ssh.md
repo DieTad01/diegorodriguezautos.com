@@ -2,7 +2,11 @@
 
 [← Volver al índice](README.md)
 
-Esta guía es para practicar SQL directamente en tu VPS de Hostinger, **sin riesgo de romper el sitio**. La idea clave:
+Esta guía es para practicar SQL directamente en tu VPS de Hostinger, **sin riesgo de romper el sitio**.
+
+> **Debian 13 usa MariaDB** (Ubuntu usa MySQL). Son compatibles: todo lo de esta guía funciona igual (se probó en MariaDB 11.8, la versión de Debian 13). Diferencias: el comando se llama `mariadb` (en vez de `mysql`), `mysqldump` es `mariadb-dump`, `mysql_secure_installation` es `mariadb-secure-installation`, y algunos números de error cambian (se indican abajo).
+
+La idea clave:
 
 | Base de datos | Usuario | Para qué |
 |---|---|---|
@@ -101,7 +105,9 @@ CREATE DATABASE agencia_practica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 CREATE USER 'practica'@'localhost' IDENTIFIED BY 'OTRA_CONTRASEÑA_DISTINTA';
 -- Todo el poder, pero SOLO sobre la base de práctica
 GRANT ALL PRIVILEGES ON agencia_practica.* TO 'practica'@'localhost';
--- Permite crear triggers sin ser root (si no, sale ERROR 1419 en el ejercicio 6.4)
+-- SOLO en Ubuntu con MySQL: permite crear triggers sin ser root
+-- (si no, sale ERROR 1419 en el ejercicio 6.4). En Debian con MariaDB
+-- no hace falta y da error: sáltate esta línea.
 SET PERSIST log_bin_trust_function_creators = 1;
 EXIT;
 ```
@@ -395,7 +401,7 @@ INSERT INTO ventas (vehiculo_id, cliente_id, fecha, precio_final) VALUES (6, 1, 
 -- Un cliente que no existe (FOREIGN KEY) -> ERROR 1452
 INSERT INTO ventas (vehiculo_id, cliente_id, fecha, precio_final) VALUES (1, 999, CURDATE(), 1);
 
--- Precio negativo (CHECK) -> ERROR 3819
+-- Precio negativo (CHECK) -> ERROR 3819 (en MariaDB: ERROR 4025)
 UPDATE vehiculos SET precio = -1 WHERE id = 1;
 
 -- Borrar un auto que tiene venta (FOREIGN KEY) -> ERROR 1451
@@ -475,7 +481,7 @@ DELIMITER ;
 INSERT INTO ventas (vehiculo_id, cliente_id, fecha, precio_final) VALUES (7, 2, CURDATE(), 215000);
 SELECT id, marca, estado FROM vehiculos WHERE id = 7;  -- vendido
 ```
-Si sale `ERROR 1419 ... SUPER privilege`, te faltó el `SET PERSIST log_bin_trust_function_creators = 1;` de la sección 2 (ejecútalo con `sudo mysql`).
+Si sale `ERROR 1419 ... SUPER privilege` (solo pasa en MySQL), te faltó el `SET PERSIST log_bin_trust_function_creators = 1;` de la sección 2 (ejecútalo con `sudo mysql`). En MariaDB funciona sin eso.
 </details>
 
 ---
@@ -571,6 +577,6 @@ El sitio no se entera: trabajas sobre la copia.
 | `ERROR 1046 No database selected` | Falta `USE agencia_practica;` |
 | `ERROR 1062 Duplicate entry` | Rompe un `UNIQUE` (ej. vender el mismo auto dos veces) |
 | `ERROR 1451 / 1452 foreign key constraint fails` | Borras algo que otra tabla usa / apuntas a algo que no existe |
-| `ERROR 3819 Check constraint ... is violated` | Rompe una regla `CHECK` (ej. precio negativo) |
+| `ERROR 3819 Check constraint ... is violated` (MariaDB: `ERROR 4025 CONSTRAINT ... failed`) | Rompe una regla `CHECK` (ej. precio negativo) |
 | `ERROR 1265 Data truncated` | Valor que no cabe en la columna o que no está en el `ENUM` |
 | `ERROR 2002 Can't connect ... socket` | MySQL está apagado: `sudo systemctl start mysql` |

@@ -16,9 +16,9 @@ Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet*
 | | **helmet** 8 | Security headers, including a strict Content-Security-Policy |
 | | **dotenv** | Loads secrets from a non-committed `.env` file |
 | | Node `crypto` (built-in) | `scrypt` password hashing and HMAC-SHA256 signed session cookies |
-| Database | **MySQL** 8 (InnoDB, `utf8mb4`) | Vehicles, image links, customers, sales and payments, with foreign keys and `CHECK` constraints |
+| Database | **MySQL** 8 or **MariaDB** 10.11+ (InnoDB, `utf8mb4`) | Vehicles, image links, customers, sales and payments, with foreign keys and `CHECK` constraints |
 | Images | **Google Drive** share links | Stored as URLs only and normalized to Drive's thumbnail endpoint |
-| Infrastructure | **Hostinger VPS** running Ubuntu 22.04/24.04 | Hosting |
+| Infrastructure | **Hostinger VPS** running Debian 13/12 or Ubuntu 24.04/22.04 | Hosting; `deploy/instalar.sh` installs everything in one command |
 | | **Nginx** | Reverse proxy, login rate limiting, blocks dotfiles |
 | | **PM2** | Keeps the Node process alive and restarts it on boot |
 | | **Let's Encrypt** (Certbot) | Free HTTPS certificate with auto-renewal |
