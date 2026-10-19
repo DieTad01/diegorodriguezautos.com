@@ -23,6 +23,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | Cambiar usuario o contraseña del panel `/admin` | `bash /var/www/diegorodriguezautos.com/deploy/cambiar-admin.sh` |
 | Preparar el VPS para un repositorio privado | `bash /var/www/diegorodriguezautos.com/deploy/llave-github.sh` |
 | Reinstalar o aplicar cambios de Nginx/HTTPS | `bash /var/www/diegorodriguezautos.com/deploy/instalar.sh` |
+| **El sitio no abre: revisar todo y decir qué hacer** | `bash /var/www/diegorodriguezautos.com/deploy/diagnostico.sh` |
 | Ver errores del sitio | `sudo -u deploy pm2 logs diegorodriguezautos` |
 
 ## Mapa del sitio

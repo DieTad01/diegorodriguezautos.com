@@ -96,6 +96,7 @@ Server scripts (run as root on the VPS):
 |---|---|
 | `deploy/instalar.sh` | One-command install on Debian/Ubuntu: Nginx, MariaDB/MySQL, Node, PM2, firewall, HTTPS. Safe to re-run |
 | `deploy/actualizar.sh` | Deploy the latest commit: database backup, install, health check, automatic rollback; `--volver` returns to the previous version |
+| `deploy/diagnostico.sh` | Read-only health check: install, services, local responses, DNS vs. server IP, ports, firewall, TLS certificate and recent errors, with the fix for each failure |
 | `deploy/cambiar-admin.sh` | Change the admin username/password and invalidate all sessions |
 | `deploy/llave-github.sh` | Create a read-only deploy key (verifying GitHub's host key) so the server can pull from a private repository |
 

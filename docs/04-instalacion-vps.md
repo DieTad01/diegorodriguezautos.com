@@ -177,6 +177,12 @@ Qué protege al sitio, cómo correr las pruebas y qué nunca debe subirse a GitH
 
 ## Problemas comunes
 
+**Primero corre el diagnóstico**: revisa instalación, servicios, DNS, puertos, firewall y certificado, y te dice qué corregir (no cambia nada):
+
+```bash
+curl -fsSLo diagnostico.sh https://raw.githubusercontent.com/DieTad01/diegorodriguezautos.com/claude/pensive-heisenberg-v62n8s/deploy/diagnostico.sh && bash diagnostico.sh
+```
+
 | Síntoma | Revisa |
 |---|---|
 | 502 Bad Gateway | `pm2 status` y `pm2 logs diegorodriguezautos`: Node no está corriendo |
