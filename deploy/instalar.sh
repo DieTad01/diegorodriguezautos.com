@@ -15,7 +15,9 @@ set -euo pipefail
 
 DOMINIO="${DOMINIO:-diegorodriguezautos.com}"
 REPO="${REPO:-https://github.com/DieTad01/diegorodriguezautos.com.git}"
-RAMA="${RAMA:-claude/pensive-heisenberg-v62n8s}"
+# Rama: la que pidas; si ya está instalado, la que ya usa el servidor; si no, la de por defecto
+RAMA_INSTALADA="$(sed -n 's#^ref: refs/heads/##p' "${DIR:-/var/www/diegorodriguezautos.com}/.git/HEAD" 2>/dev/null || true)"
+RAMA="${RAMA:-${RAMA_INSTALADA:-claude/pensive-heisenberg-v62n8s}}"
 DIR="${DIR:-/var/www/diegorodriguezautos.com}"
 USUARIO_APP="deploy"
 DB_NOMBRE="agencia_autos"

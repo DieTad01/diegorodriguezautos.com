@@ -11,6 +11,19 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 5 | [Practicar MySQL por SSH](05-practica-mysql-ssh.md) | Práctica de SQL en una base separada, con ejercicios resueltos |
 | 6 | [Seguridad](06-seguridad.md) | Qué protege al sitio (inyección SQL, HTML, sesión…) y cómo probarlo |
 | 7 | [Aparecer en Google](07-google.md) | Search Console, sitemap, Perfil de Negocio y qué falta para que te encuentren |
+| 8 | [Actualizar el sitio con git](08-actualizar-con-git.md) | Cómo hacer un cambio, publicarlo, regresar de versión y manejar respaldos |
+| 9 | [Accesos](09-accesos.md) | Todas las cuentas, contraseñas y llaves; cómo cambiarlas; repositorio privado |
+
+## Comandos del servidor (en hPanel → VPS → Terminal)
+
+| Para | Comando |
+|---|---|
+| Publicar la última versión de GitHub | `bash /var/www/diegorodriguezautos.com/deploy/actualizar.sh` |
+| Regresar a la versión anterior | `bash /var/www/diegorodriguezautos.com/deploy/actualizar.sh --volver` |
+| Cambiar usuario o contraseña del panel `/admin` | `bash /var/www/diegorodriguezautos.com/deploy/cambiar-admin.sh` |
+| Preparar el VPS para un repositorio privado | `bash /var/www/diegorodriguezautos.com/deploy/llave-github.sh` |
+| Reinstalar o aplicar cambios de Nginx/HTTPS | `bash /var/www/diegorodriguezautos.com/deploy/instalar.sh` |
+| Ver errores del sitio | `sudo -u deploy pm2 logs diegorodriguezautos` |
 
 ## Mapa del sitio
 

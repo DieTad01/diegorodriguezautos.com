@@ -35,7 +35,7 @@ Navegador ──HTTPS──> Nginx (80/443) ──> Node + Express (127.0.0.1:30
 4. Al final muestra un resumen. Abre `https://diegorodriguezautos.com`.
 
 - Si el DNS todavía no apunta al VPS, instala todo menos HTTPS y te dice qué falta; cuando propague, vuelve a correr `bash instalar.sh`.
-- **Para actualizar el sitio** después de cambios en GitHub: vuelve a correr `bash instalar.sh`. No borra datos ni cambia contraseñas.
+- **Para actualizar el sitio** después de cambios en GitHub usa `bash /var/www/diegorodriguezautos.com/deploy/actualizar.sh` (más rápido, con respaldo y regreso automático; ver [8. Actualizar con git](08-actualizar-con-git.md)). Volver a correr `instalar.sh` también es seguro: no borra datos ni cambia contraseñas.
 - Si el puerto 80 ya lo usa otro programa (plantillas de VPS con panel como CyberPanel), se detiene y te pide reinstalar el VPS con **Debian 13** o **Ubuntu 24.04** sin panel.
 
 Si prefieres hacerlo a mano o entender cada paso, sigue la guía completa:
@@ -164,13 +164,10 @@ Entra a `https://diegorodriguezautos.com/admin` con el usuario del paso 6. Cómo
 ## 11. Actualizar el sitio después de un cambio
 
 ```bash
-cd /var/www/diegorodriguezautos.com
-git pull
-npm ci --omit=dev
-pm2 reload diegorodriguezautos
+bash /var/www/diegorodriguezautos.com/deploy/actualizar.sh
 ```
 
-Si el cambio trae tablas o columnas nuevas en `db/schema.sql`, aplícalas con `sudo mysql agencia_autos`.
+Respalda la base, instala la versión nueva de GitHub y, si no responde, regresa sola a la anterior. Todo el proceso (ramas, cómo hacer cambios, respaldos, regresar de versión) está en [8. Actualizar el sitio con git](08-actualizar-con-git.md). Usuarios, contraseñas y llaves: [9. Accesos](09-accesos.md).
 
 ---
 

@@ -90,6 +90,15 @@ npm start                       # http://127.0.0.1:3000  and  http://127.0.0.1:3
 | `npm run crear-admin` | Interactively create the admin credentials for `.env` |
 | `npm test` | Run the security tests (requires a `.env.test` pointing to a database whose name contains `test`) |
 
+Server scripts (run as root on the VPS):
+
+| Script | Description |
+|---|---|
+| `deploy/instalar.sh` | One-command install on Debian/Ubuntu: Nginx, MariaDB/MySQL, Node, PM2, firewall, HTTPS. Safe to re-run |
+| `deploy/actualizar.sh` | Deploy the latest commit: database backup, install, health check, automatic rollback; `--volver` returns to the previous version |
+| `deploy/cambiar-admin.sh` | Change the admin username/password and invalidate all sessions |
+| `deploy/llave-github.sh` | Create a read-only deploy key (verifying GitHub's host key) so the server can pull from a private repository |
+
 ## Documentation (Spanish)
 
 The full user manual lives in [`docs/`](docs/README.md):
@@ -101,3 +110,5 @@ The full user manual lives in [`docs/`](docs/README.md):
 5. [MySQL practice over SSH](docs/05-practica-mysql-ssh.md): separate practice database with solved exercises
 6. [Security](docs/06-seguridad.md): protections and how they were tested
 7. [Getting found on Google](docs/07-google.md): Search Console, sitemap, Business Profile and what is still missing
+8. [Updating with git](docs/08-actualizar-con-git.md): branches, pull requests, deploying, rolling back, backups
+9. [Access](docs/09-accesos.md): every account, password and key, how to rotate them, and making the repository private
