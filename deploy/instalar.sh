@@ -204,11 +204,15 @@ ok "Nginx listo"
 paso "8/9 Firewall (solo SSH, HTTP y HTTPS)"
 if [ "$SIN_SISTEMA" != 1 ]; then
   PUERTO_SSH="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"
-  ufw allow "${PUERTO_SSH:-22}/tcp" >/dev/null
-  ufw allow 80/tcp >/dev/null
-  ufw allow 443/tcp >/dev/null
-  ufw --force enable >/dev/null
-  ok "Abiertos: SSH (${PUERTO_SSH:-22}), 80 y 443. La base de datos (3306) y Node (3000) quedan cerrados"
+  # Si ufw falla (pasa en algunos VPS), se avisa y se sigue: el sitio y el HTTPS no dependen de él
+  if ufw allow "${PUERTO_SSH:-22}/tcp" >/dev/null 2>&1 && ufw allow 80/tcp >/dev/null 2>&1 \
+     && ufw allow 443/tcp >/dev/null 2>&1 && ufw --force enable >/dev/null 2>&1; then
+    ok "Abiertos: SSH (${PUERTO_SSH:-22}), 80 y 443. La base de datos (3306) y Node (3000) quedan cerrados"
+  else
+    aviso "No se pudo activar el firewall ufw en este VPS (se continúa). Detalle: $(ufw --force enable 2>&1 | tail -1)"
+    echo "  Nota: MySQL/MariaDB y Node solo escuchan dentro del servidor, así que no quedan expuestos."
+    echo "  Si quieres firewall, usa el de hPanel → VPS → Seguridad → Firewall (permite TCP 22, 80 y 443)."
+  fi
 else
   ok "(omitido en modo prueba)"
 fi
