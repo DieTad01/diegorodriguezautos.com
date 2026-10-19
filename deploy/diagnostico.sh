@@ -106,6 +106,12 @@ else
   mal "No hay certificado HTTPS: https:// no abrirá (y /admin no funciona sin él)"
   hacer "Cuando el punto 4 esté bien, corre: bash $DIR/deploy/instalar.sh  (lo saca solo)"
   hacer "Mientras tanto prueba entrar con http://$DOMINIO (sin la s)"
+  if [ -s /var/log/letsencrypt/letsencrypt.log ]; then
+    echo "  Último intento de Let's Encrypt:"
+    grep -iE 'detail|error|problem|timeout|refused|unauthorized' /var/log/letsencrypt/letsencrypt.log | tail -n 5 | cut -c1-220 | sed 's/^/    /'
+  else
+    echo "  (Let's Encrypt nunca se intentó: el instalador no llegó al paso 9)"
+  fi
 fi
 
 # ---------- 7. Errores recientes ----------

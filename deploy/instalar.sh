@@ -31,6 +31,8 @@ ok()    { printf '\033[1;32m✔ %s\033[0m\n' "$*"; }
 aviso() { printf '\033[1;31m! %s\033[0m\n' "$*"; }
 falla() { aviso "$*"; exit 1; }
 como_app() { sudo -u "$USUARIO_APP" -H --preserve-env=http_proxy,https_proxy,HTTP_PROXY,HTTPS_PROXY,no_proxy,NO_PROXY,NODE_EXTRA_CA_CERTS,npm_config_cafile env "PATH=$PATH" bash -c "$1"; }
+# Si algo falla de forma inesperada, decirlo (nunca detenerse en silencio)
+trap 'aviso "Se detuvo inesperadamente en la línea $LINENO de $(basename "$0"). Copia todo lo de arriba y pídele ayuda a Claude."' ERR
 hay_terminal() { [ -r /dev/tty ] && [ -w /dev/tty ] && { : </dev/tty; } 2>/dev/null; }
 
 # Ningún comando lee del teclado salvo las preguntas (que usan /dev/tty).
@@ -203,7 +205,8 @@ ok "Nginx listo"
 # ---------- 8. Firewall ----------
 paso "8/9 Firewall (solo SSH, HTTP y HTTPS)"
 if [ "$SIN_SISTEMA" != 1 ]; then
-  PUERTO_SSH="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"
+  # Puerto de SSH; si sshd -T no puede responder (pasa en Debian 13), se usa el 22
+  PUERTO_SSH="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}' || true)"
   # Si ufw falla (pasa en algunos VPS), se avisa y se sigue: el sitio y el HTTPS no dependen de él
   if ufw allow "${PUERTO_SSH:-22}/tcp" >/dev/null 2>&1 && ufw allow 80/tcp >/dev/null 2>&1 \
      && ufw allow 443/tcp >/dev/null 2>&1 && ufw --force enable >/dev/null 2>&1; then

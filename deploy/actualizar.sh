@@ -25,6 +25,8 @@ ok()    { printf '\033[1;32m✔ %s\033[0m\n' "$*"; }
 aviso() { printf '\033[1;31m! %s\033[0m\n' "$*"; }
 falla() { aviso "$*"; exit 1; }
 como_app() { sudo -u "$USUARIO_APP" -H --preserve-env=http_proxy,https_proxy,HTTP_PROXY,HTTPS_PROXY,no_proxy,NO_PROXY,NODE_EXTRA_CA_CERTS,npm_config_cafile env "PATH=$PATH" bash -c "$1"; }
+# Si algo falla de forma inesperada, decirlo (nunca detenerse en silencio)
+trap 'aviso "Se detuvo inesperadamente en la línea $LINENO de $(basename "$0"). Copia todo lo de arriba y pídele ayuda a Claude."' ERR
 git_app() { como_app "cd '$DIR' && git $*"; }
 
 [ "$(id -u)" -eq 0 ] || falla "Corre este script como root (o con: sudo bash actualizar.sh)."
