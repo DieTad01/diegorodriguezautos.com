@@ -113,3 +113,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 7. [Getting found on Google](docs/07-google.md): Search Console, sitemap, Business Profile and what is still missing
 8. [Updating with git](docs/08-actualizar-con-git.md): branches, pull requests, deploying, rolling back, backups
 9. [Access](docs/09-accesos.md): every account, password and key, how to rotate them, and making the repository private
+10. [Inventory step by step](docs/10-inventario-paso-a-paso.md): day-to-day guide to add cars, upload photos via Google Drive (also from a phone) and update price or status

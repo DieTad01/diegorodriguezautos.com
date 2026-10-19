@@ -2,6 +2,8 @@
 
 [← Volver al índice](README.md)
 
+> ¿Buscas la guía corta del día a día (fotos → Drive → panel)? Está en [10. Inventario paso a paso](10-inventario-paso-a-paso.md).
+
 Desde `https://diegorodriguezautos.com/admin` se maneja todo el inventario. Solo entra quien tiene el usuario y la contraseña.
 
 > El panel **solo funciona con HTTPS** (con el candado en el navegador). Por seguridad, la sesión no viaja por `http://`.

@@ -4,6 +4,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 
 | # | Guía | Para quién |
 |---|---|---|
+| ⭐ | [**Inventario paso a paso**](10-inventario-paso-a-paso.md) | **El día a día: agregar autos, subir fotos desde Drive (también desde el celular), cambiar precio o estado** |
 | 1 | [Página pública](01-pagina-publica.md) | Cualquier visitante: ver el inventario, buscar y ver fotos |
 | 2 | [Panel de administración](02-panel-admin.md) | El administrador: entrar, agregar, editar, cambiar estado y borrar autos |
 | 3 | [Fotos desde Google Drive](03-fotos-google-drive.md) | El administrador: cómo compartir y pegar los links de las fotos |
@@ -13,6 +14,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 7 | [Aparecer en Google](07-google.md) | Search Console, sitemap, Perfil de Negocio y qué falta para que te encuentren |
 | 8 | [Actualizar el sitio con git](08-actualizar-con-git.md) | Cómo hacer un cambio, publicarlo, regresar de versión y manejar respaldos |
 | 9 | [Accesos](09-accesos.md) | Todas las cuentas, contraseñas y llaves; cómo cambiarlas; repositorio privado |
+| 10 | [Inventario paso a paso](10-inventario-paso-a-paso.md) | Guía rápida del día a día (la misma de la ⭐) |
 
 ## Comandos del servidor (en hPanel → VPS → Terminal)
 

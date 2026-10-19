@@ -877,6 +877,45 @@ footer.sitio .oro {
     padding: 18px;
   }
 
+  /* Panel admin en celular: cada auto como tarjeta, con Editar/Borrar a la vista */
+  .tabla {
+    min-width: 0;
+  }
+
+  .tabla thead {
+    display: none;
+  }
+
+  .tabla tbody, .tabla td {
+    display: block;
+  }
+
+  .tabla tr {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 2px 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-borde);
+  }
+
+  .tabla td {
+    border: 0;
+    padding: 0;
+  }
+
+  .tabla td:first-child {
+    grid-row: span 3;
+  }
+
+  .tabla td:last-child {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+  }
+
+  .tabla td:last-child .acciones button {
+    flex: 1;
+  }
+
   #form-busqueda {
     max-width: none;
   }
