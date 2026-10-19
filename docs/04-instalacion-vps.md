@@ -18,6 +18,27 @@ Navegador ──HTTPS──> Nginx (80/443) ──> Node + Express (127.0.0.1:30
 
 ---
 
+## Opción rápida: instalador automático
+
+`deploy/instalar.sh` hace los pasos 2 a 9 de esta guía por ti. Antes, haz el **paso 1 (DNS)**.
+
+1. En hPanel: **VPS → tu servidor → Terminal** (se abre en el navegador, ya como `root`).
+2. Pega estas dos líneas y presiona Enter:
+
+   ```bash
+   curl -fsSLo instalar.sh https://raw.githubusercontent.com/DieTad01/diegorodriguezautos.com/claude/pensive-heisenberg-v62n8s/deploy/instalar.sh
+   bash instalar.sh
+   ```
+
+3. Te pide **usuario y contraseña del panel admin** (mínimo 12 caracteres; no se ve al escribirla) y un **correo** para avisos del certificado (opcional).
+4. Al final muestra un resumen. Abre `https://diegorodriguezautos.com`.
+
+- Si el DNS todavía no apunta al VPS, instala todo menos HTTPS y te dice qué falta; cuando propague, vuelve a correr `bash instalar.sh`.
+- **Para actualizar el sitio** después de cambios en GitHub: vuelve a correr `bash instalar.sh`. No borra datos ni cambia contraseñas.
+- Si el puerto 80 ya lo usa otro programa (plantillas de VPS con panel como CyberPanel), se detiene y te pide reinstalar el VPS con **Ubuntu 24.04** sin panel.
+
+Si prefieres hacerlo a mano o entender cada paso, sigue la guía completa:
+
 ## 1. DNS (panel de Hostinger)
 
 En **Dominios → diegorodriguezautos.com → DNS / Nameservers**:
