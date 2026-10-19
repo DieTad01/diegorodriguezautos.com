@@ -20,14 +20,17 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 function mostrarLogin() {
   seccionPanel.hidden = true;
   $('btn-salir').hidden = true;
+  cerrarFormContrasena();
   seccionLogin.hidden = false;
   $('form-login').usuario.focus();
 }
 
-function mostrarPanel() {
+// Muestra con qué cuenta se entró (cada persona tiene la suya)
+function mostrarPanel(usuario) {
   seccionLogin.hidden = true;
   seccionPanel.hidden = false;
   $('btn-salir').hidden = false;
+  $('usuario-actual').textContent = typeof usuario === 'string' ? usuario : '';
   cargarVehiculos();
 }
 
@@ -45,13 +48,13 @@ $('form-login').addEventListener('submit', async (e) => {
   const datos = new FormData(e.target);
   $('error-login').textContent = '';
   try {
-    await pedirJson('/api/admin/login', {
+    const sesion = await pedirJson('/api/admin/login', {
       method: 'POST',
       headers: JSON_HEADERS,
       body: JSON.stringify({ usuario: datos.get('usuario'), password: datos.get('password') }),
     });
     e.target.reset();
-    mostrarPanel();
+    mostrarPanel(sesion && sesion.usuario);
   } catch (err) {
     $('error-login').textContent = err.message;
   }
@@ -60,6 +63,43 @@ $('form-login').addEventListener('submit', async (e) => {
 $('btn-salir').addEventListener('click', async () => {
   await pedirJson('/api/admin/logout', { method: 'POST', headers: JSON_HEADERS, body: '{}' }).catch(() => {});
   mostrarLogin();
+});
+
+// ---------- Cambiar mi contraseña ----------
+
+const formContrasena = $('form-contrasena');
+
+function cerrarFormContrasena() {
+  formContrasena.reset();
+  formContrasena.hidden = true;
+  $('error-contrasena').textContent = '';
+}
+
+$('btn-contrasena').addEventListener('click', () => {
+  formContrasena.hidden = false;
+  formContrasena.actual.focus();
+});
+$('btn-cancelar-contrasena').addEventListener('click', cerrarFormContrasena);
+
+formContrasena.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { actual, nueva, repetida } = formContrasena;
+  $('error-contrasena').textContent = '';
+  if (nueva.value !== repetida.value) {
+    $('error-contrasena').textContent = 'La contraseña nueva y su repetición no coinciden.';
+    return;
+  }
+  try {
+    await pedirJson('/api/admin/contrasena', {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ actual: actual.value, nueva: nueva.value }),
+    });
+    cerrarFormContrasena();
+    $('estado-panel').textContent = 'Contraseña cambiada. Úsala la próxima vez que entres.';
+  } catch (err) {
+    manejarError(err, $('error-contrasena'));
+  }
 });
 
 // ---------- Lista ----------
@@ -232,8 +272,8 @@ form.addEventListener('submit', async (e) => {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    await pedirJson('/api/admin/sesion');
-    mostrarPanel();
+    const sesion = await pedirJson('/api/admin/sesion');
+    mostrarPanel(sesion && sesion.usuario);
   } catch {
     mostrarLogin();
   }

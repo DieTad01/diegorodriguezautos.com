@@ -140,8 +140,6 @@ DB_PORT=3306
 DB_USER=$DB_USUARIO
 DB_PASSWORD=$DB_PASSWORD
 DB_NAME=$DB_NOMBRE
-ADMIN_USER=
-ADMIN_PASSWORD_HASH=
 SESSION_SECRET=
 EOF
   ok ".env creado"
@@ -155,31 +153,26 @@ poner() { # poner CLAVE VALOR  (valores sin '|' ni saltos de línea)
 poner DB_PASSWORD "$DB_PASSWORD"   # siempre igual a la que tiene MySQL
 grep -q '^SESSION_SECRET=.\{32,\}' "$ENV" || poner SESSION_SECRET "$(openssl rand -hex 32)"
 
-if ! grep -q '^ADMIN_PASSWORD_HASH=scrypt:' "$ENV"; then
-  if hay_terminal; then
-    echo "Crea el usuario del panel de administración (/admin)."
-    while :; do
-      read -rp "  Usuario (letras, números, . _ -): " ADMIN </dev/tty
-      [[ "$ADMIN" =~ ^[A-Za-z0-9._-]{3,50}$ ]] && break
-      aviso "Usuario inválido, intenta de nuevo."
-    done
-    while :; do
-      read -rsp "  Contraseña (mínimo 12 caracteres): " CLAVE1 </dev/tty; echo
-      read -rsp "  Repite la contraseña: " CLAVE2 </dev/tty; echo
-      if [ "${#CLAVE1}" -lt 12 ]; then aviso "Muy corta."; elif [ "$CLAVE1" != "$CLAVE2" ]; then aviso "No coinciden."; else break; fi
-    done
-    HASH="$(cd "$DIR" && CLAVE="$CLAVE1" node -e "process.stdout.write(require('./src/auth').hashPassword(process.env.CLAVE))")"
-    unset CLAVE1 CLAVE2
-    poner ADMIN_USER "$ADMIN"
-    poner ADMIN_PASSWORD_HASH "$HASH"
-    ok "Administrador '$ADMIN' creado (la contraseña no se guarda, solo su huella cifrada)"
-  else
-    aviso "Sin terminal interactiva: crea el admin después con  cd $DIR && sudo -u $USUARIO_APP npm run crear-admin"
-  fi
-fi
 chown "$USUARIO_APP:$USUARIO_APP" "$ENV"
 chmod 600 "$ENV"
 umask 022
+
+# Cuentas del panel /admin: viven en la tabla `administradores` (una por persona).
+# Si el .env trae el usuario de la versión anterior, se pasa a la tabla.
+usuarios_admin() { como_app "cd '$DIR' && node scripts/usuarios-admin.js $*"; }
+usuarios_admin migrar
+if usuarios_admin hay-alguno; then
+  ok "Cuentas del panel: $(usuarios_admin listar | tail -n +2 | awk '{print $1}' | paste -sd, - || true)"
+elif hay_terminal; then
+  echo "Crea TU cuenta del panel de administración (/admin). Después podrás crear la de tu cliente."
+  for _ in 1 2 3; do
+    sudo -u "$USUARIO_APP" -H env "PATH=$PATH" node "$DIR/scripts/usuarios-admin.js" agregar </dev/tty && break
+    aviso "Intenta de nuevo."
+  done
+  usuarios_admin hay-alguno || aviso "No se creó la cuenta. Créala después con: bash $DIR/deploy/usuarios-admin.sh agregar"
+else
+  aviso "Sin terminal interactiva: crea la cuenta del panel después con: bash $DIR/deploy/usuarios-admin.sh agregar"
+fi
 
 # ---------- 6. Arrancar con PM2 ----------
 paso "6/9 Arrancando el sitio con PM2"
@@ -252,6 +245,7 @@ fi
 printf '\n\033[1;32m===== Listo =====\033[0m\n'
 echo "  Sitio:        https://$DOMINIO   (o http://${IP_VPS:-IP-del-VPS} mientras propaga el DNS)"
 echo "  Panel admin:  https://$DOMINIO/admin   (solo funciona con HTTPS)"
+echo "  Cuentas:      bash $DIR/deploy/usuarios-admin.sh listar | agregar <usuario> | contrasena <usuario> | quitar <usuario>"
 echo "  Código:       $DIR   ·   Secretos: $ENV (no se sube a GitHub)"
 echo "  Ver errores:  sudo -u $USUARIO_APP pm2 logs $APP_PM2"
 echo "  Actualizar:   vuelve a correr  bash instalar.sh"

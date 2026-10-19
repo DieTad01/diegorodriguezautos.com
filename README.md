@@ -1,6 +1,6 @@
 # diegorodriguezautos.com
 
-Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet** in León, Guanajuato, Mexico (Blvd. Adolfo López Mateos 3431 Ote.): a public inventory page with location, map and click-to-call, plus a password-protected admin panel to manage vehicles. The visual identity (black and gold) comes from the BYD | Chevrolet branding. Vehicle photos are linked from Google Drive, so no image files are stored on the server.
+Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet** in León, Guanajuato, Mexico (Blvd. Adolfo López Mateos 3431 Ote.): a public inventory page with location, map and click-to-call, plus an admin panel with per-person accounts to manage vehicles. The visual identity (black and gold) comes from the BYD | Chevrolet branding. Vehicle photos are linked from Google Drive, so no image files are stored on the server.
 
 ![Home page](docs/img/publico-portada.png)
 
@@ -16,7 +16,7 @@ Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet*
 | | **helmet** 8 | Security headers, including a strict Content-Security-Policy |
 | | **dotenv** | Loads secrets from a non-committed `.env` file |
 | | Node `crypto` (built-in) | `scrypt` password hashing and HMAC-SHA256 signed session cookies |
-| Database | **MySQL** 8 or **MariaDB** 10.11+ (InnoDB, `utf8mb4`) | Vehicles, image links, customers, sales and payments, with foreign keys and `CHECK` constraints |
+| Database | **MySQL** 8 or **MariaDB** 10.11+ (InnoDB, `utf8mb4`) | Vehicles, image links, customers, sales, payments and admin accounts, with foreign keys and `CHECK` constraints |
 | Images | **Google Drive** share links | Stored as URLs only and normalized to Drive's thumbnail endpoint |
 | Infrastructure | **Hostinger VPS** running Debian 13/12 or Ubuntu 24.04/22.04 | Hosting; `deploy/instalar.sh` installs everything in one command |
 | | **Nginx** | Reverse proxy, login rate limiting, blocks dotfiles |
@@ -24,7 +24,7 @@ Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet*
 | | **Let's Encrypt** (Certbot) | Free HTTPS certificate with auto-renewal |
 | | **UFW** | Firewall: only SSH, HTTP and HTTPS are open |
 | SEO | Server-rendered vehicle pages, schema.org JSON-LD (`AutoDealer`, `Car`, `BreadcrumbList`), dynamic `sitemap.xml`, `robots.txt`, canonical URLs, Open Graph | Discoverability on Google and link previews |
-| Testing | **node:test** (built-in test runner) | 34 security and SEO tests against a real MySQL test database |
+| Testing | **node:test** (built-in test runner) | 42 security, account and SEO tests against a real MySQL test database |
 
 ## Architecture
 
@@ -44,7 +44,7 @@ public/                  The only folder served to the internet
   js/comun.js, app.js, admin.js
 src/                     Server code (never served)
   app.js                 Express app, security headers, error handling
-  auth.js                Admin login, signed session cookie, CSRF and brute-force protection
+  auth.js                Per-user admin login, signed session cookie, CSRF and brute-force protection
   db.js                  MySQL connection pool
   validacion.js          Whitelist input validation and image URL normalization
   vehiculos.js           All SQL queries (parameterized)
@@ -53,7 +53,7 @@ src/                     Server code (never served)
   routes/                Public API, admin API and server-rendered pages
 db/schema.sql            Tables and constraints
 db/datos-ejemplo.sql     Sample data for SQL practice
-scripts/crear-admin.js   Generates the admin password hash and session secret
+scripts/usuarios-admin.js  Manage admin accounts: list, add, reset password, sign out everywhere, remove
 test/seguridad.test.js   Security test suite
 deploy/nginx.conf        Nginx site configuration
 docs/                    User manual and guides (Spanish)
@@ -63,7 +63,7 @@ docs/                    User manual and guides (Spanish)
 
 - **SQL injection:** every query uses prepared statements; multiple statements are disabled; IDs, enums and numeric fields are strictly validated; `LIKE` wildcards are escaped. The production database user only has `SELECT, INSERT, UPDATE, DELETE`.
 - **HTML injection / XSS:** no `innerHTML` anywhere; all data is rendered as text. Server-rendered pages escape every value (`esc()`), and JSON-LD escapes `<`, `>` and `&` so data can never close its `<script>` block. The CSP allows only same-origin scripts and styles, with no inline code.
-- **Admin access control:** single admin with a `scrypt` password hash; an HMAC-signed cookie that is `HttpOnly`, `Secure` and `SameSite=Strict` with an 8-hour expiry; Origin checks and JSON-only request bodies against CSRF; brute-force limits in both Node and Nginx.
+- **Admin access control:** one account per person (developer, client…) stored in the `administradores` table with salted `scrypt` hashes; users can change their own password (current password required); an HMAC-signed cookie binding username and issue time that is `HttpOnly`, `Secure` and `SameSite=Strict` with an 8-hour expiry; changing a password or deleting an account revokes only that account's sessions immediately; constant-time responses for unknown users; Origin checks and JSON-only request bodies against CSRF; brute-force limits in both Node and Nginx.
 - **Image links:** only `https://` URLs are accepted; `javascript:`, `data:` and `http:` are rejected.
 - **Secrets:** stored only in `.env` on the server; `.gitignore` blocks env files, keys and database dumps.
 
@@ -78,7 +78,8 @@ npm install
 cp .env.example .env            # set NODE_ENV=development and your MySQL credentials
 mysql -u root -p -e "CREATE DATABASE agencia_autos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 mysql -u root -p agencia_autos < db/schema.sql
-npm run crear-admin             # paste the 3 printed lines into .env
+# set SESSION_SECRET in .env (the command to generate it is in the file)
+npm run crear-admin             # create your admin account in the database
 npm start                       # http://127.0.0.1:3000  and  http://127.0.0.1:3000/admin
 ```
 
@@ -87,7 +88,8 @@ npm start                       # http://127.0.0.1:3000  and  http://127.0.0.1:3
 | Command | Description |
 |---|---|
 | `npm start` | Start the server (`server.js`) |
-| `npm run crear-admin` | Interactively create the admin credentials for `.env` |
+| `npm run crear-admin` | Interactively create an admin account (hidden password prompt) |
+| `npm run usuarios -- <listar\|agregar\|contrasena\|cerrar-sesiones\|quitar> [user]` | Manage admin accounts |
 | `npm test` | Run the security tests (requires a `.env.test` pointing to a database whose name contains `test`) |
 
 Server scripts (run as root on the VPS):
@@ -97,7 +99,8 @@ Server scripts (run as root on the VPS):
 | `deploy/instalar.sh` | One-command install on Debian/Ubuntu: Nginx, MariaDB/MySQL, Node, PM2, firewall, HTTPS. Safe to re-run |
 | `deploy/actualizar.sh` | Deploy the latest commit: database backup, install, health check, automatic rollback; `--volver` returns to the previous version |
 | `deploy/diagnostico.sh` | Read-only health check: install, services, local responses, DNS vs. server IP, ports, firewall, TLS certificate and recent errors, with the fix for each failure |
-| `deploy/cambiar-admin.sh` | Change the admin username/password and invalidate all sessions |
+| `deploy/usuarios-admin.sh` | Manage admin panel accounts (`listar`, `agregar`, `contrasena`, `cerrar-sesiones`, `quitar`) |
+| `deploy/cambiar-admin.sh` | Shortcut for `usuarios-admin.sh contrasena`: reset one account's password and sign it out |
 | `deploy/llave-github.sh` | Create a read-only deploy key (verifying GitHub's host key) so the server can pull from a private repository |
 
 ## Documentation (Spanish)
@@ -114,3 +117,5 @@ The full user manual lives in [`docs/`](docs/README.md):
 8. [Updating with git](docs/08-actualizar-con-git.md): branches, pull requests, deploying, rolling back, backups
 9. [Access](docs/09-accesos.md): every account, password and key, how to rotate them, and making the repository private
 10. [Inventory step by step](docs/10-inventario-paso-a-paso.md): day-to-day guide to add cars, upload photos via Google Drive (also from a phone) and update price or status
+11. [Developer access](docs/11-acceso-desarrollador.md): your SSH key, GitHub, your panel account and how to give the client panel-only access
+12. [Client guide](docs/12-guia-cliente.md) ([PDF](docs/guia-cliente.pdf)): for the business owner: sign in, change password, add cars and photos; no server details

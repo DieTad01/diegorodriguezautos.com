@@ -145,7 +145,7 @@ El panel se adapta al celular: cada auto aparece como tarjeta con sus botones **
 | "precio debe ser un número…" | Tiene `$`, comas o espacios | Escribe solo números: `169000` |
 | "anio debe ser un número entero entre…" | Año fuera de rango | Revisa el año |
 | "máximo 15 imágenes" | Pegaste más de 15 links | Deja las 15 mejores |
-| "Usuario o contraseña incorrectos" | | Revisa mayúsculas. Si la olvidaste: `bash /var/www/diegorodriguezautos.com/deploy/cambiar-admin.sh` en el VPS |
+| "Usuario o contraseña incorrectos" | | Revisa mayúsculas. Si la olvidaste: `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh contrasena <usuario>` en el VPS |
 | "Demasiados intentos" | 5 intentos fallidos | Espera 15 minutos |
 | El panel te regresa a "Entrar" | La sesión duró 8 horas y expiró | Vuelve a entrar y revisa en la lista si tu último cambio se guardó; si no, repítelo |
 | La foto sale recortada en la tarjeta | Es vertical | Usa fotos horizontales; en la ventana de detalle se ve completa |

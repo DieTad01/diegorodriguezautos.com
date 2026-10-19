@@ -3,6 +3,7 @@
 //   POST   /api/admin/login
 //   POST   /api/admin/logout
 //   GET    /api/admin/sesion
+//   POST   /api/admin/contrasena   (cambiar la propia contraseña)
 //   GET    /api/admin/vehiculos
 //   POST   /api/admin/vehiculos
 //   PUT    /api/admin/vehiculos/:id
@@ -18,20 +19,21 @@ const router = express.Router();
 
 router.use(auth.soloMismoOrigen);
 
-router.post('/login', auth.limitarIntentos, (req, res) => {
-  if (!auth.configuracion()) {
+router.post('/login', auth.limitarIntentos, async (req, res) => {
+  if (!auth.secreto()) {
     return res.status(503).json({ error: 'El administrador no está configurado en el servidor' });
   }
   const { usuario, password } = req.body || {};
-  if (typeof usuario !== 'string' || typeof password !== 'string'
-      || usuario.length > 100 || password.length > 200
-      || !auth.credencialesValidas(usuario, password)) {
+  const valido = typeof usuario === 'string' && typeof password === 'string'
+    && usuario.length <= 100 && password.length <= 200
+    ? await auth.autenticar(usuario, password) : null;
+  if (!valido) {
     auth.registrarFallo(req.ip);
     return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
   }
   auth.limpiarFallos(req.ip);
-  auth.crearSesion(res);
-  res.json({ ok: true });
+  auth.crearSesion(res, valido);
+  res.json({ ok: true, usuario: valido });
 });
 
 router.post('/logout', (req, res) => {
@@ -42,6 +44,22 @@ router.post('/logout', (req, res) => {
 router.use(auth.requiereSesion);
 
 router.get('/sesion', (req, res) => {
+  res.json({ ok: true, usuario: req.admin });
+});
+
+// Cada quien cambia SU contraseña; se pide la actual (por si dejó la sesión abierta)
+router.post('/contrasena', auth.limitarIntentos, async (req, res) => {
+  const { actual, nueva } = req.body || {};
+  if (typeof actual !== 'string' || typeof nueva !== 'string' || actual.length > 200 || nueva.length > 200) {
+    return res.status(400).json({ error: 'Datos inválidos' });
+  }
+  const error = await auth.cambiarPassword(req.admin, actual, nueva);
+  if (error) {
+    if (error.startsWith('La contraseña actual')) auth.registrarFallo(req.ip);
+    return res.status(400).json({ error });
+  }
+  auth.limpiarFallos(req.ip);
+  auth.crearSesion(res, req.admin); // este dispositivo sigue dentro; los demás deben volver a entrar
   res.json({ ok: true });
 });
 

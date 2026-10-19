@@ -88,6 +88,8 @@ poner_version() { # poner_version COMMIT
   git_app "checkout -q -B '$RAMA' '$1'"
   como_app "cd '$DIR' && npm ci --omit=dev --no-audit --no-fund --silent"
   "$SQL_CLIENTE" "$DB_NOMBRE" < "$DIR/db/schema.sql"
+  # Pasa el usuario del panel de la versión anterior (.env) a la tabla de cuentas
+  if [ -f "$DIR/scripts/usuarios-admin.js" ]; then como_app "cd '$DIR' && node scripts/usuarios-admin.js migrar"; fi
   como_app "cd '$DIR' && pm2 startOrReload ecosystem.config.js --update-env >/dev/null && pm2 save >/dev/null"
 }
 

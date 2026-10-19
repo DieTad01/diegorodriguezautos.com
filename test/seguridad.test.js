@@ -18,11 +18,12 @@ if (!/test/i.test(process.env.DB_NAME || '')) {
   process.exit(1);
 }
 
+const { execFileSync } = require('child_process');
 const { hashPassword } = require('../src/auth');
 
 process.env.NODE_ENV = 'test';
-process.env.ADMIN_USER = 'admin';
-process.env.ADMIN_PASSWORD_HASH = hashPassword('contraseña-de-prueba');
+delete process.env.ADMIN_USER;
+delete process.env.ADMIN_PASSWORD_HASH;
 process.env.SESSION_SECRET = 'x'.repeat(64);
 
 const crearApp = require('../src/app');
@@ -52,6 +53,25 @@ const VEHICULO = {
   estado: 'disponible', imagenes: [],
 };
 
+// Crea una cuenta del panel directamente en la tabla (como lo haría usuarios-admin.js)
+async function crearCuenta(usuario, password) {
+  await pool.execute(
+    'INSERT INTO administradores (usuario, password_hash, sesiones_desde) VALUES (?, ?, ?)',
+    [usuario, hashPassword(password), Date.now()],
+  );
+}
+
+// Inicia sesión desde una IP nueva cada vez (los fallos a propósito no
+// deben activar el bloqueo por fuerza bruta de otras pruebas)
+let ipPrueba = 0;
+async function entrar(usuario, password, ip = `10.7.${Math.floor(++ipPrueba / 250)}.${ipPrueba % 250}`) {
+  const r = await peticion('/api/admin/login', { method: 'POST', body: { usuario, password }, headers: { 'X-Forwarded-For': ip } });
+  return { ...r, cookie: r.status === 200 ? r.headers.get('set-cookie').split(';')[0] : null };
+}
+
+const conCookie = (c, ruta = '/api/admin/vehiculos') => fetch(base + ruta, { headers: { Cookie: c } });
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function contarVehiculos() {
   const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM vehiculos');
   return total;
@@ -63,10 +83,11 @@ before(async () => {
     await pool.query(sentencia);
   }
   await pool.query('SET FOREIGN_KEY_CHECKS = 0');
-  for (const tabla of ['pagos', 'ventas', 'clientes', 'vehiculo_imagenes', 'vehiculos']) {
+  for (const tabla of ['pagos', 'ventas', 'clientes', 'vehiculo_imagenes', 'vehiculos', 'administradores']) {
     await pool.query(`TRUNCATE TABLE ${tabla}`);
   }
   await pool.query('SET FOREIGN_KEY_CHECKS = 1');
+  await crearCuenta('admin', 'contraseña-de-prueba');
 
   servidor = crearApp().listen(0, '127.0.0.1');
   await new Promise((r) => servidor.once('listening', r));
@@ -297,17 +318,201 @@ test('Admin: sin sesión todo devuelve 401', async () => {
 
 test('Admin: una cookie inventada o alterada no sirve', async () => {
   const [nombre, valor] = cookie.split('=');
-  const [expira, firma] = valor.split('.');
+  const [usuarioB64, emitida, firma] = valor.split('.');
+  assert.equal(Buffer.from(usuarioB64, 'base64url').toString(), 'admin');
+  const otroUsuario = Buffer.from('otro').toString('base64url');
   const falsas = [
     `${nombre}=9999999999999.abc`,
-    `${nombre}=${Number(expira) + 1000000}.${firma}`,
-    `${nombre}=${expira}.${firma.slice(0, -1)}${firma.endsWith('A') ? 'B' : 'A'}`,
-    `${nombre}=${Date.now() - 1000}.${firma}`,
+    `${nombre}=${usuarioB64}.9999999999999.abc`,
+    `${nombre}=${usuarioB64}.${Number(emitida) + 1000}.${firma}`,
+    `${nombre}=${usuarioB64}.${emitida}.${firma.slice(0, -1)}${firma.endsWith('A') ? 'B' : 'A'}`,
+    `${nombre}=${otroUsuario}.${emitida}.${firma}`,
+    `${nombre}=${emitida}.${firma}`,
+    `${nombre}=${usuarioB64}.${emitida}.${firma}.extra`,
+    `${nombre}=${usuarioB64}.${emitida}`,
   ];
   for (const falsa of falsas) {
     const r = await fetch(`${base}/api/admin/vehiculos`, { headers: { Cookie: falsa } });
     assert.equal(r.status, 401, falsa);
   }
+  assert.equal((await conCookie(cookie)).status, 200, 'la original sí sirve');
+});
+
+test('Admin: una cookie bien firmada pero vencida (más de 8 h) o con fecha futura no sirve', async () => {
+  const crypto = require('crypto');
+  // Cuenta sin "cerrar sesiones" previo, para que solo cuente la fecha de la cookie
+  await pool.execute("INSERT INTO administradores (usuario, password_hash, sesiones_desde) VALUES ('antigua', ?, 0)", [hashPassword('clave-de-la-antigua')]);
+  const u = Buffer.from('antigua').toString('base64url');
+  const firmada = (emitida) => `sesion_admin=${u}.${emitida}.${crypto.createHmac('sha256', process.env.SESSION_SECRET).update(`admin.${u}.${emitida}`).digest('base64url')}`;
+  try {
+    assert.equal((await conCookie(firmada(Date.now() - 60 * 1000))).status, 200, 'control: reciente sí sirve');
+    assert.equal((await conCookie(firmada(Date.now() - 9 * 60 * 60 * 1000))).status, 401, 'vencida');
+    assert.equal((await conCookie(firmada(Date.now() + 60 * 60 * 1000))).status, 401, 'del futuro');
+  } finally {
+    await pool.query("DELETE FROM administradores WHERE usuario = 'antigua'");
+  }
+});
+
+// ---------------------------------------------------------------
+// Varias cuentas del panel (tú, tu cliente...)
+// ---------------------------------------------------------------
+
+test('Cuentas: cada persona entra con la suya y el panel sabe quién es', async () => {
+  await crearCuenta('cliente1', 'clave-del-cliente-1');
+  const a = await entrar('admin', 'contraseña-de-prueba');
+  const c = await entrar('cliente1', 'clave-del-cliente-1');
+  assert.equal(a.status, 200);
+  assert.equal(c.status, 200);
+  assert.equal(c.json.usuario, 'cliente1');
+  const sesion = await (await conCookie(c.cookie, '/api/admin/sesion')).json();
+  assert.equal(sesion.usuario, 'cliente1');
+  // Cambiar el nombre dentro de la cookie del cliente por 'admin' no da acceso como admin
+  const [nombreCookie, valor] = c.cookie.split('=');
+  const resto = valor.slice(valor.indexOf('.'));
+  const suplantada = `${nombreCookie}=${Buffer.from('admin').toString('base64url')}${resto}`;
+  assert.equal((await conCookie(suplantada)).status, 401, 'suplantar a otra cuenta');
+  // La contraseña de una cuenta no abre otra
+  assert.equal((await entrar('cliente1', 'contraseña-de-prueba')).status, 401);
+  assert.equal((await entrar('admin', 'clave-del-cliente-1')).status, 401);
+  // Usuario inexistente: mismo mensaje que contraseña mala (no revela qué cuentas existen)
+  const noExiste = await entrar('nadie', 'clave-del-cliente-1');
+  const malaClave = await entrar('cliente1', 'otra-clave-cualquiera');
+  assert.equal(noExiste.status, 401);
+  assert.equal(noExiste.texto, malaClave.texto);
+  const [[fila]] = await pool.query("SELECT ultimo_acceso FROM administradores WHERE usuario = 'cliente1'");
+  assert.ok(fila.ultimo_acceso, 'se registra el último acceso');
+});
+
+test('Cuentas: cambiar la contraseña cierra solo las sesiones de esa cuenta', async () => {
+  const a = await entrar('admin', 'contraseña-de-prueba');
+  const c = await entrar('cliente1', 'clave-del-cliente-1');
+  await espera(5);
+  await pool.execute('UPDATE administradores SET password_hash = ?, sesiones_desde = ? WHERE usuario = ?',
+    [hashPassword('clave-nueva-cliente-1'), Date.now(), 'cliente1']);
+  assert.equal((await conCookie(c.cookie)).status, 401, 'la sesión vieja del cliente ya no sirve');
+  assert.equal((await conCookie(a.cookie)).status, 200, 'la del admin sigue');
+  assert.equal((await entrar('cliente1', 'clave-del-cliente-1')).status, 401, 'la contraseña vieja ya no sirve');
+  const nueva = await entrar('cliente1', 'clave-nueva-cliente-1');
+  assert.equal(nueva.status, 200);
+  assert.equal((await conCookie(nueva.cookie)).status, 200);
+});
+
+test('Cuentas: borrar una cuenta invalida su sesión al instante', async () => {
+  const c = await entrar('cliente1', 'clave-nueva-cliente-1');
+  assert.equal((await conCookie(c.cookie)).status, 200);
+  await pool.execute("DELETE FROM administradores WHERE usuario = 'cliente1'");
+  assert.equal((await conCookie(c.cookie)).status, 401);
+  assert.equal((await entrar('cliente1', 'clave-nueva-cliente-1')).status, 401);
+});
+
+test('Cuentas: cada quien cambia SU contraseña desde el panel, pidiendo la actual', async () => {
+  await crearCuenta('cliente2', 'clave-cliente-dos-2');
+  const otroDispositivo = await entrar('cliente2', 'clave-cliente-dos-2');
+  const c = await entrar('cliente2', 'clave-cliente-dos-2');
+  const cambiar = (body, cookieUsada = c.cookie, headers = {}) => peticion('/api/admin/contrasena', {
+    method: 'POST', body, headers: { Cookie: cookieUsada, 'X-Forwarded-For': '10.8.8.8', ...headers },
+  });
+  assert.equal((await peticion('/api/admin/contrasena', { method: 'POST', body: { actual: 'x', nueva: 'y' } })).status, 401, 'sin sesión');
+  assert.equal((await cambiar({ actual: 'clave-cliente-dos-2', nueva: 'clave-nueva-larga-22' }, c.cookie, { Origin: 'https://sitio-malo.com' })).status, 403, 'CSRF');
+  assert.equal((await cambiar({ actual: 'clave-equivocada-1', nueva: 'clave-nueva-larga-22' })).status, 400, 'actual incorrecta');
+  assert.equal((await cambiar({ actual: 'clave-cliente-dos-2', nueva: 'corta' })).status, 400, 'nueva corta');
+  assert.equal((await cambiar({ actual: 'clave-cliente-dos-2', nueva: 'clave-cliente-dos-2' })).status, 400, 'igual a la actual');
+  assert.equal((await cambiar({ actual: 'clave-cliente-dos-2', nueva: 'mi-cliente2-largo' })).status, 400, 'contiene el usuario');
+  assert.equal((await cambiar({ actual: ['clave-cliente-dos-2'], nueva: { $ne: 1 } })).status, 400, 'tipos raros');
+  assert.equal((await entrar('cliente2', 'clave-cliente-dos-2')).status, 200, 'nada de lo anterior la cambió');
+  await espera(5);
+  // Mandar "usuario: admin" no sirve para cambiar la de otra cuenta
+  const ok = await cambiar({ usuario: 'admin', actual: 'clave-cliente-dos-2', nueva: 'clave-nueva-larga-22' });
+  assert.equal(ok.status, 200);
+  const cookieNueva = ok.headers.get('set-cookie').split(';')[0];
+  assert.equal((await conCookie(cookieNueva)).status, 200, 'este dispositivo sigue dentro');
+  assert.equal((await conCookie(otroDispositivo.cookie)).status, 401, 'los demás dispositivos salen');
+  assert.equal((await entrar('cliente2', 'clave-cliente-dos-2')).status, 401, 'la vieja ya no sirve');
+  assert.equal((await entrar('cliente2', 'clave-nueva-larga-22')).status, 200);
+  assert.equal((await entrar('admin', 'contraseña-de-prueba')).status, 200, 'la del admin no cambió');
+  assert.equal((await conCookie(cookie)).status, 200, 'ni se cerró su sesión');
+  await pool.query("DELETE FROM administradores WHERE usuario = 'cliente2'");
+});
+
+test('Cuentas: el usuario del .env anterior solo vale mientras no haya cuentas en la tabla', async () => {
+  process.env.ADMIN_USER = 'legado';
+  process.env.ADMIN_PASSWORD_HASH = hashPassword('clave-del-legado-1');
+  try {
+    assert.equal((await entrar('legado', 'clave-del-legado-1')).status, 401, 'hay cuentas: el .env se ignora');
+    const [respaldo] = await pool.query('SELECT * FROM administradores');
+    await pool.query('DELETE FROM administradores');
+    try {
+      const l = await entrar('legado', 'clave-del-legado-1');
+      assert.equal(l.status, 200, 'tabla vacía: compatibilidad con la versión anterior');
+      assert.equal((await conCookie(l.cookie)).status, 200);
+      await crearCuenta('nueva', 'clave-de-la-cuenta-nueva');
+      assert.equal((await conCookie(l.cookie)).status, 401, 'en cuanto hay cuentas, la sesión del .env deja de valer');
+    } finally {
+      await pool.query('DELETE FROM administradores');
+      for (const f of respaldo) {
+        await pool.execute('INSERT INTO administradores (id, usuario, nombre, password_hash, sesiones_desde) VALUES (?, ?, ?, ?, ?)',
+          [f.id, f.usuario, f.nombre, f.password_hash, f.sesiones_desde]);
+      }
+    }
+  } finally {
+    delete process.env.ADMIN_USER;
+    delete process.env.ADMIN_PASSWORD_HASH;
+  }
+  assert.equal((await conCookie(cookie)).status, 200);
+});
+
+test('Cuentas: al arrancar, la cuenta del .env anterior pasa a la tabla con la misma contraseña (solo si está vacía)', async () => {
+  const { migrarLegado } = require('../src/auth');
+  const [respaldo] = await pool.query('SELECT * FROM administradores');
+  process.env.ADMIN_USER = 'legado.dos';
+  process.env.ADMIN_PASSWORD_HASH = hashPassword('clave-del-legado-dos');
+  try {
+    assert.equal(await migrarLegado(), null, 'con cuentas en la tabla no hace nada');
+    await pool.query('DELETE FROM administradores');
+    assert.equal(await migrarLegado(), 'legado.dos');
+    assert.equal(await migrarLegado(), null, 'la segunda vez no duplica');
+    delete process.env.ADMIN_USER;
+    delete process.env.ADMIN_PASSWORD_HASH;
+    const l = await entrar('legado.dos', 'clave-del-legado-dos');
+    assert.equal(l.status, 200, 'entra con la misma contraseña, ya desde la tabla');
+    await crearCuenta('cliente3', 'clave-del-cliente-3');
+    assert.equal((await conCookie(l.cookie)).status, 200, 'crear otra cuenta ya no lo deja fuera');
+  } finally {
+    delete process.env.ADMIN_USER;
+    delete process.env.ADMIN_PASSWORD_HASH;
+    await pool.query('DELETE FROM administradores');
+    for (const f of respaldo) {
+      await pool.execute('INSERT INTO administradores (id, usuario, nombre, password_hash, sesiones_desde) VALUES (?, ?, ?, ?, ?)',
+        [f.id, f.usuario, f.nombre, f.password_hash, f.sesiones_desde]);
+    }
+  }
+  assert.equal((await conCookie(cookie)).status, 200);
+});
+
+test('Cuentas: el script usuarios-admin crea, rechaza y borra cuentas', () => {
+  const script = path.join(__dirname, '..', 'scripts', 'usuarios-admin.js');
+  const correr = (args, entrada = '', envExtra = {}) => {
+    try {
+      return { codigo: 0, salida: execFileSync(process.execPath, [script, ...args], {
+        input: entrada, env: { ...process.env, ENV_FILE: path.join(__dirname, '..', '.env.test'), ...envExtra }, encoding: 'utf8', stdio: 'pipe',
+      }) };
+    } catch (err) {
+      return { codigo: err.status, salida: String(err.stdout) + String(err.stderr) };
+    }
+  };
+  assert.equal(correr(['agregar', 'script.prueba'], 'Persona\nclave-script-12345\nclave-script-12345\n').codigo, 0);
+  assert.equal(correr(['agregar', 'script.prueba'], 'x\nclave-script-12345\nclave-script-12345\n').codigo, 1, 'duplicada');
+  assert.equal(correr(['agregar', 'otra'], 'x\ncorta\ncorta\n').codigo, 1, 'contraseña corta');
+  assert.equal(correr(['agregar', 'otra'], 'x\nclave-larga-uno-1\nclave-larga-dos-2\n').codigo, 1, 'no coinciden');
+  assert.equal(correr(['agregar', "x' OR '1'='1"], '').codigo, 1, 'usuario con comillas');
+  assert.match(correr(['listar']).salida, /script\.prueba\s+Persona/);
+  assert.equal(correr(['quitar', 'script.prueba'], 'no\n').codigo, 1, 'sin confirmar no borra');
+  assert.equal(correr(['quitar', 'script.prueba'], 'script.prueba\n').codigo, 0);
+  assert.doesNotMatch(correr(['listar']).salida, /script\.prueba/);
+  // migrar: el usuario del .env viejo NO se agrega si ya hay cuentas (no revive cuentas borradas)
+  const legado = { ADMIN_USER: 'legado.viejo', ADMIN_PASSWORD_HASH: hashPassword('clave-del-legado-viejo') };
+  assert.equal(correr(['migrar'], '', legado).codigo, 0);
+  assert.doesNotMatch(correr(['listar']).salida, /legado\.viejo/);
 });
 
 test('Admin: la cookie es HttpOnly y SameSite=Strict', async () => {
@@ -403,7 +608,7 @@ test('Admin: cada campo guarda inyecciones SQL y HTML como texto, al crear y al 
   const [[{ ventasDespues }]] = await pool.query('SELECT COUNT(*) AS ventasDespues FROM ventas');
   assert.equal(ventasDespues, ventasAntes, 'ningún ataque tocó otras tablas');
   const [tablas] = await pool.query('SHOW TABLES');
-  assert.equal(tablas.length, 5, 'todas las tablas siguen existiendo');
+  assert.equal(tablas.length, 6, 'todas las tablas siguen existiendo');
   await pool.execute('DELETE FROM vehiculos WHERE id = ?', [base.json.id]);
 });
 

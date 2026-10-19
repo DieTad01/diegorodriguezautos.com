@@ -4,7 +4,7 @@
 
 > ¿Buscas la guía corta del día a día (fotos → Drive → panel)? Está en [10. Inventario paso a paso](10-inventario-paso-a-paso.md).
 
-Desde `https://diegorodriguezautos.com/admin` se maneja todo el inventario. Solo entra quien tiene el usuario y la contraseña.
+Desde `https://diegorodriguezautos.com/admin` se maneja todo el inventario. **Cada persona tiene su propia cuenta** (tú, tu cliente…). Cómo crearlas: [11. Tus accesos](11-acceso-desarrollador.md#7-darle-acceso-a-tu-cliente-solo-al-panel).
 
 > El panel **solo funciona con HTTPS** (con el candado en el navegador). Por seguridad, la sesión no viaja por `http://`.
 
@@ -22,7 +22,13 @@ Escribe tu **usuario** y **contraseña** y presiona **Entrar**.
 - La sesión dura **8 horas**. Después vuelve a pedir la contraseña.
 - **Cerrar sesión** (arriba a la derecha) termina la sesión en ese navegador. Úsalo siempre en computadoras que no sean tuyas.
 
-¿Olvidaste la contraseña o quieres cambiarla? Se genera una nueva en el servidor con `npm run crear-admin` (ver [Instalación, paso 6](04-instalacion-vps.md#6-crear-el-env-solo-en-el-servidor)) y se reinicia con `pm2 reload diegorodriguezautos`.
+## Cambiar mi contraseña
+
+Arriba de la lista dice **"Entraste como …"**. Ahí, **Cambiar mi contraseña** pide la actual y la nueva dos veces (mínimo 12 caracteres, sin el usuario dentro). Al guardarla, tus otros dispositivos deben volver a entrar; las demás cuentas no se afectan.
+
+![Cambiar mi contraseña](img/admin-contrasena.png)
+
+¿Alguien **olvidó** su contraseña? En el VPS se le pone una temporal: `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh contrasena <usuario>`. Nadie puede ver la anterior.
 
 ## La lista de vehículos
 
@@ -112,6 +118,6 @@ En general es mejor marcar como **Vendido** que borrar.
 ## Buenas prácticas
 
 - Usa una contraseña de al menos 12 caracteres que no uses en otro lado.
-- No compartas el usuario del panel; si alguien más necesita entrar, cambia la contraseña cuando ya no lo necesite.
+- No compartas tu cuenta: si alguien más necesita entrar, créale **la suya** (`usuarios-admin.sh agregar`) y bórrala cuando ya no la necesite (`usuarios-admin.sh quitar`).
 - Cierra sesión en computadoras ajenas.
 - El panel acepta cualquier texto en los campos (comillas, símbolos, etc.) y siempre lo muestra tal cual. Las protecciones contra inyecciones están explicadas en [6. Seguridad](06-seguridad.md).

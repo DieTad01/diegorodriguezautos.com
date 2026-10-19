@@ -81,3 +81,19 @@ CREATE TABLE IF NOT EXISTS pagos (
   CONSTRAINT fk_pagos_venta FOREIGN KEY (venta_id) REFERENCES ventas (id) ON DELETE CASCADE,
   CONSTRAINT chk_pagos_monto CHECK (monto > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Usuarios del panel /admin (una cuenta por persona: tú, tu cliente...)
+-- La contraseña NO se guarda: solo su huella scrypt.
+-- sesiones_desde: las sesiones abiertas antes de este momento (ms) dejan
+-- de valer; se actualiza al cambiar la contraseña.
+CREATE TABLE IF NOT EXISTS administradores (
+  id             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  usuario        VARCHAR(50)  NOT NULL,
+  nombre         VARCHAR(100) NULL,
+  password_hash  VARCHAR(255) NOT NULL,
+  sesiones_desde BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  ultimo_acceso  TIMESTAMP    NULL,
+  creado_en      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_administradores_usuario (usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

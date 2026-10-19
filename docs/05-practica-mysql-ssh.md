@@ -30,11 +30,7 @@ ssh root@IP_DEL_VPS
 
 La primera vez pregunta *"Are you sure you want to continue connecting?"*: escribe `yes`.
 
-Si ya seguiste [04-instalacion-vps.md](04-instalacion-vps.md), entra mejor con el usuario `deploy` (no con root):
-
-```bash
-ssh deploy@IP_DEL_VPS
-```
+> Se entra como **root** porque los scripts del servidor (`actualizar.sh`, `usuarios-admin.sh`…) y `sudo mysql` lo necesitan. Lo que lo hace seguro es entrar **solo con llave** (pasos 1.2 y 1.4), no cambiar de usuario. El usuario `deploy` solo corre el sitio y no tiene permisos de administrador.
 
 ### 1.2 Usar una llave SSH (más seguro y sin escribir contraseña)
 
@@ -49,10 +45,10 @@ Copia la llave **pública** al VPS:
 
 ```bash
 # Mac / Linux
-ssh-copy-id deploy@IP_DEL_VPS
+ssh-copy-id root@IP_DEL_VPS
 
 # Windows (PowerShell)
-type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh deploy@IP_DEL_VPS "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@IP_DEL_VPS "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
 > También puedes pegarla en **hPanel → VPS → Configuración → Claves SSH**.
@@ -65,7 +61,7 @@ En tu computadora crea o edita `~/.ssh/config` (Windows: `C:\Users\TU_USUARIO\.s
 ```
 Host agencia
     HostName IP_DEL_VPS
-    User deploy
+    User root
     IdentityFile ~/.ssh/id_ed25519
 ```
 
@@ -80,13 +76,18 @@ sudo nano /etc/ssh/sshd_config.d/99-seguridad.conf
 ```
 
 ```
-PermitRootLogin no
+PermitRootLogin prohibit-password
 PasswordAuthentication no
+KbdInteractiveAuthentication no
 ```
 
+`prohibit-password` = root puede entrar **solo con llave**, nunca con contraseña. (No pongas `PermitRootLogin no`: te quedarías sin poder correr los scripts del sitio por SSH.)
+
 ```bash
-sudo sshd -t && sudo systemctl reload ssh
+sshd -t && systemctl reload ssh
 ```
+
+> La **Terminal de hPanel** (navegador) sigue funcionando aunque apagues las contraseñas: es tu entrada de emergencia si pierdes la llave.
 
 > No cierres tu sesión actual hasta comprobar en otra terminal que sigues pudiendo entrar.
 

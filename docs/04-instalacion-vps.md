@@ -120,9 +120,9 @@ sudo mysql agencia_autos < db/schema.sql
 
 ```bash
 cp .env.example .env
-nano .env            # pon la contraseña de MySQL del paso 5
-npm run crear-admin  # pide usuario y contraseña del panel; copia las 3 líneas que imprime al .env
+nano .env            # pon la contraseña de MySQL del paso 5 y SESSION_SECRET (el comando está en el archivo)
 chmod 600 .env       # solo el usuario deploy puede leerlo
+npm run crear-admin  # crea TU cuenta del panel en la base de datos (pide usuario y contraseña)
 ```
 
 ## 7. Arrancar con PM2
@@ -188,7 +188,7 @@ curl -fsSLo diagnostico.sh https://raw.githubusercontent.com/DieTad01/diegorodri
 | 502 Bad Gateway | `pm2 status` y `pm2 logs diegorodriguezautos`: Node no está corriendo |
 | El dominio no carga | `dig +short diegorodriguezautos.com` debe dar la IP del VPS |
 | "Error interno" en la página | `pm2 logs`: casi siempre son datos de MySQL mal puestos en `.env` |
-| `/admin` no deja entrar | ¿Ya hay HTTPS? ¿Copiaste las 3 líneas de `npm run crear-admin` y reiniciaste PM2? |
+| `/admin` no deja entrar | ¿Ya hay HTTPS? ¿Existe tu cuenta? Revisa con `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh listar` |
 | "Demasiados intentos" | Espera 15 minutos (o `pm2 reload diegorodriguezautos`) |
 | La foto de Drive no se ve | La imagen debe estar compartida como "Cualquier persona con el enlace" |
 | Certbot falla | El DNS aún no propaga, o el puerto 80 está cerrado en `ufw` |

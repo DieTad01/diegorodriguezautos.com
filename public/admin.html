@@ -45,6 +45,32 @@
 
     <!-- 2) Panel (solo con sesión) -->
     <section id="seccion-panel" hidden>
+      <p class="cuenta">
+        Entraste como <strong id="usuario-actual"></strong>
+        · <button type="button" id="btn-contrasena" class="enlace">Cambiar mi contraseña</button>
+      </p>
+
+      <form id="form-contrasena" class="tarjeta" hidden>
+        <h2>Cambiar mi contraseña</h2>
+        <p class="ayuda">Mínimo 12 caracteres. Al guardarla se cierra tu sesión en tus otros dispositivos.</p>
+        <div class="campos">
+          <label>Contraseña actual
+            <input name="actual" type="password" autocomplete="current-password" required maxlength="200">
+          </label>
+          <label>Contraseña nueva
+            <input name="nueva" type="password" autocomplete="new-password" required minlength="12" maxlength="200">
+          </label>
+          <label>Repite la nueva
+            <input name="repetida" type="password" autocomplete="new-password" required minlength="12" maxlength="200">
+          </label>
+        </div>
+        <p class="mensaje error" id="error-contrasena" role="alert"></p>
+        <div class="acciones">
+          <button type="submit">Guardar contraseña</button>
+          <button type="button" id="btn-cancelar-contrasena" class="secundario">Cancelar</button>
+        </div>
+      </form>
+
       <div class="encabezado-seccion">
         <h1>Vehículos</h1>
         <button type="button" id="btn-nuevo">+ Agregar vehículo</button>

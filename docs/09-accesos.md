@@ -11,7 +11,7 @@ Ordenados del más poderoso al menos: quien tiene el primero puede cambiar todos
 | 1 | **Cuenta de Hostinger** | [hpanel.hostinger.com](https://hpanel.hostinger.com) | Todo: el VPS, el dominio y el DNS | Tu gestor de contraseñas | hPanel → Perfil → Seguridad | Recuperación por correo de Hostinger |
 | 2 | **VPS como root** | hPanel → VPS → **Terminal**, o `ssh root@IP` | Todo lo del servidor: código, base de datos, `.env` | Llave SSH en tu computadora (o contraseña de root) | hPanel → VPS → Configuración → contraseña de root / claves SSH | Entra por la Terminal de hPanel y cámbiala ahí |
 | 3 | **Cuenta de GitHub** | [github.com](https://github.com) | Cambiar el código que llegará al sitio | Tu gestor de contraseñas + 2FA | GitHub → Settings → Password and authentication | Recuperación de GitHub (guarda los códigos de recuperación de 2FA) |
-| 4 | **Panel `/admin`** | `https://diegorodriguezautos.com/admin` | Agregar, editar y borrar autos | Solo tú la sabes; en el servidor solo hay una huella cifrada (`ADMIN_PASSWORD_HASH` en `.env`) | `bash /var/www/diegorodriguezautos.com/deploy/cambiar-admin.sh` | El mismo comando: no pide la contraseña anterior |
+| 4 | **Panel `/admin`** (una cuenta por persona) | `https://diegorodriguezautos.com/admin` | Agregar, editar y borrar autos | Solo la sabe cada persona; en la base de datos hay una huella cifrada (tabla `administradores`) | Cada quien en el panel: **Cambiar mi contraseña** | En el VPS: `usuarios-admin.sh contrasena <usuario>` (no pide la anterior) |
 | 5 | **Base de datos (administrador)** | En el VPS: `sudo mariadb` | Todas las bases | No tiene contraseña: solo entra el root del VPS | — | — |
 | 6 | **Base de datos (usuario del sitio)** | Solo lo usa el sitio | Leer y escribir filas; **no** puede borrar tablas | `DB_PASSWORD` en `.env` (aleatoria) | Ver [Cambiar la contraseña de la base](#cambiar-la-contraseña-de-la-base-del-sitio) | Igual |
 | 7 | **Llave del VPS en GitHub** (si el repo es privado) | Automático en cada actualización | Solo **leer** el código | `/home/deploy/.ssh/github_deploy` | Bórrala en GitHub y vuelve a correr `llave-github.sh` | Igual |
@@ -22,23 +22,27 @@ Ordenados del más poderoso al menos: quien tiene el primero puede cambiar todos
 1. **Activa la verificación en dos pasos (2FA)** en Hostinger, GitHub y Google. Es lo que más protege: aunque alguien robe una contraseña, no puede entrar.
 2. **Usa un gestor de contraseñas** (Bitwarden, 1Password, el de Google o Apple) y una contraseña distinta para cada cosa.
 3. **Entra al VPS con llave SSH** y apaga el acceso con contraseña ([5. Practicar MySQL por SSH](05-practica-mysql-ssh.md), sección 1).
-4. **No compartas el usuario del panel.** Si alguien más necesita entrar un rato, cambia la contraseña después con `cambiar-admin.sh`.
+4. **Una cuenta del panel por persona.** A tu cliente créale la suya; nunca le des la tuya ni acceso al VPS. Paso a paso: [11. Tus accesos](11-acceso-desarrollador.md).
 
 ## Panel de administración
 
-- Hay **un solo usuario**. Su contraseña nunca se guarda: el servidor guarda una huella cifrada (scrypt) y compara contra ella.
+- **Una cuenta por persona** en la tabla `administradores`. Las contraseñas nunca se guardan: solo una huella cifrada (scrypt).
 - **5 intentos fallidos** desde la misma conexión bloquean el acceso **15 minutos**. Nginx agrega otro límite.
 - La sesión dura **8 horas** y solo funciona por **HTTPS**.
 
-### Cambiar el usuario o la contraseña (o si la olvidaste)
+### Cuentas: crear, cambiar contraseña, quitar
 
 En el VPS:
 
 ```bash
-bash /var/www/diegorodriguezautos.com/deploy/cambiar-admin.sh
+bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh listar                    # quién tiene cuenta y su último acceso
+bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh agregar diego.rodriguez   # cuenta nueva
+bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh contrasena diego.rodriguez  # si la olvidó
+bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh cerrar-sesiones diego.rodriguez  # perdió el celular
+bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh quitar diego.rodriguez    # ya no debe entrar
 ```
 
-Pide el usuario nuevo (Enter para dejar el mismo) y la contraseña nueva dos veces. Además **cierra todas las sesiones abiertas** en cualquier computadora o celular.
+Cambiar la contraseña o quitar una cuenta **cierra solo las sesiones de esa cuenta**. Cada persona también puede cambiar la suya desde el panel. Detalle: [11. Tus accesos](11-acceso-desarrollador.md#8-comandos-de-cuentas-en-el-vps).
 
 ## Cambiar la contraseña de la base del sitio
 
@@ -55,7 +59,8 @@ El instalador ve que está vacía, crea una nueva aleatoria, la aplica en la bas
 
 | Secreto | Dónde | ¿En GitHub? |
 |---|---|---|
-| Contraseña de la base del sitio, huella del admin, `SESSION_SECRET` | `/var/www/diegorodriguezautos.com/.env` (solo lo lee el usuario `deploy`) | **No, nunca** (`.gitignore` lo bloquea) |
+| Contraseña de la base del sitio, `SESSION_SECRET` | `/var/www/diegorodriguezautos.com/.env` (solo lo lee el usuario `deploy`) | **No, nunca** (`.gitignore` lo bloquea) |
+| Huellas de las contraseñas del panel | Tabla `administradores` de la base (y en sus respaldos) | No |
 | Llave SSH de tu computadora | Tu computadora (`~/.ssh/id_ed25519`) | No |
 | Llave de solo lectura del VPS para GitHub | `/home/deploy/.ssh/github_deploy` | Solo la parte **pública**, en Deploy keys |
 | Respaldos de la base | `/var/backups/diegorodriguezautos/` (solo root) | No |
@@ -64,7 +69,8 @@ El instalador ve que está vacía, crea una nueva aleatoria, la aplica en la bas
 **Si un secreto se filtra** (por ejemplo, se subió `.env` por error): cámbialo de inmediato. Borrarlo de GitHub no basta, porque queda en el historial.
 
 - Contraseña de la base: ver arriba.
-- Admin y `SESSION_SECRET`: `cambiar-admin.sh`.
+- `SESSION_SECRET` (cierra **todas** las sesiones de todos): `sed -i 's/^SESSION_SECRET=.*/SESSION_SECRET=/' /var/www/diegorodriguezautos.com/.env && bash /var/www/diegorodriguezautos.com/deploy/instalar.sh` (genera uno nuevo).
+- Contraseñas del panel: `usuarios-admin.sh contrasena <usuario>` para cada cuenta.
 - Llave del VPS: bórrala en GitHub → Settings → Deploy keys y vuelve a correr `llave-github.sh`.
 
 ## ¿Repositorio público o privado?

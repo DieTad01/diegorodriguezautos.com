@@ -4,7 +4,9 @@
 
 ## Control de acceso al panel
 
-- Solo existe **un usuario administrador**, definido en el `.env` del servidor. La contraseña **no se guarda**: se guarda su hash `scrypt` (generado con `npm run crear-admin`).
+- **Una cuenta por persona** (tabla `administradores`): tú y tu cliente entran cada quien con la suya. Las contraseñas **no se guardan**: solo su hash `scrypt` con sal propia. Se manejan con `deploy/usuarios-admin.sh` y cada quien puede cambiar la suya desde el panel (pidiendo la actual).
+- Un usuario inexistente tarda lo mismo y da el mismo mensaje que una contraseña mala: no se puede averiguar qué cuentas existen.
+- La cookie lleva el **usuario y la hora** firmados juntos: no se puede cambiar el nombre para hacerse pasar por otra cuenta. Cambiar la contraseña de una cuenta o borrarla invalida **solo sus** sesiones, al instante.
 - Al entrar se crea una **cookie de sesión firmada** (HMAC-SHA256) que:
   - es `HttpOnly`: JavaScript no puede leerla, ni uno inyectado;
   - es `Secure`: solo viaja por HTTPS;
@@ -68,4 +70,4 @@ npm test
 - Respaldos de la base de datos (`*.sql`, `*.dump`, carpeta `respaldos/`). Solo se suben `db/schema.sql` y `db/datos-ejemplo.sql`
 - `node_modules/`
 
-Si alguna vez se sube un secreto por error, **cámbialo** (contraseña nueva en MySQL, `npm run crear-admin` de nuevo): borrarlo del repo no basta, porque queda en el historial de git.
+Si alguna vez se sube un secreto por error, **cámbialo** (contraseña nueva en MySQL, `SESSION_SECRET` nuevo y `usuarios-admin.sh contrasena` para cada cuenta): borrarlo del repo no basta, porque queda en el historial de git.

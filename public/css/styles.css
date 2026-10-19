@@ -569,9 +569,28 @@ header nav .boton-llamar:hover {
   gap: 14px;
 }
 
-#form-vehiculo {
+#form-vehiculo, #form-contrasena {
   display: grid;
   gap: 14px;
+}
+
+#form-contrasena h2 {
+  margin: 0;
+}
+
+.cuenta {
+  margin: 16px 0 12px;
+  color: var(--color-suave);
+  font-size: 0.92rem;
+}
+
+.cuenta strong {
+  color: var(--color-oro-claro);
+}
+
+.cuenta button.enlace {
+  color: var(--color-oro-claro);
+  text-decoration: underline;
 }
 
 #form-vehiculo h2 {
