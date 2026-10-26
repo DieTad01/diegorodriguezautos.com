@@ -19,6 +19,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 12 | [**Guía para el cliente**](12-guia-cliente.md) · [PDF](guia-cliente.pdf) | Para Diego Rodríguez: entrar al panel, cambiar su contraseña, agregar autos y fotos. Sin datos del servidor |
 | 13 | [**MariaDB visual**](13-mariadb-visual.md) | Ver y manejar la base con DBeaver o HeidiSQL desde tu computadora, por túnel SSH |
 | 14 | [**Prepárate para tu examen de SQL**](14-examen-sql.md) | Entrar a la base desde Hostinger, acordeón, simulacro de 100 puntos con respuestas comprobadas y trampas típicas |
+| 15 | [**Mi cuenta (clientes)**](15-mi-cuenta-clientes.md) | Los compradores ven sus compras, pagos y saldo en `/mi-cuenta`; cómo darles acceso y registrar ventas y pagos |
 
 ## Comandos del servidor (en hPanel → VPS → Terminal)
 
@@ -31,6 +32,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | Poner contraseña nueva a una cuenta (la olvidó) | `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh contrasena <usuario>` |
 | Quitar una cuenta | `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh quitar <usuario>` |
 | Usuario de MariaDB para DBeaver/HeidiSQL | `bash /var/www/diegorodriguezautos.com/deploy/usuario-bd-visual.sh` |
+| Dar acceso a un comprador a Mi cuenta | `bash /var/www/diegorodriguezautos.com/deploy/clientes-acceso.sh acceso <correo>` |
 | Dejar la base de práctica como nueva (antes de practicar) | `bash /var/www/diegorodriguezautos.com/deploy/reiniciar-practica.sh` |
 | Preparar el VPS para un repositorio privado | `bash /var/www/diegorodriguezautos.com/deploy/llave-github.sh` |
 | Reinstalar o aplicar cambios de Nginx/HTTPS | `bash /var/www/diegorodriguezautos.com/deploy/instalar.sh` |
@@ -45,6 +47,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | `https://diegorodriguezautos.com/autos/12-nissan-versa-2021` | Ficha de cada auto (una por vehículo, se crea sola) | Todo el público y Google |
 | `https://diegorodriguezautos.com/aviso-de-privacidad` | Aviso de privacidad | Todo el público |
 | `https://diegorodriguezautos.com/sitemap.xml` | Lista de páginas para Google (automática) | Buscadores |
+| `https://diegorodriguezautos.com/mi-cuenta` | Compras, pagos y saldo de cada comprador | Solo el comprador, con su correo y contraseña |
 | `https://diegorodriguezautos.com/admin` | Panel de administración | Solo con cuenta propia (usuario y contraseña) |
 
 ## Flujo general

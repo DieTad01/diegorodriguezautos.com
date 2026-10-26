@@ -1,6 +1,6 @@
 # diegorodriguezautos.com
 
-Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet** in León, Guanajuato, Mexico (Blvd. Adolfo López Mateos 3431 Ote.): a public inventory page with location, map and click-to-call, plus an admin panel with per-person accounts to manage vehicles. The visual identity (black and gold) comes from the BYD | Chevrolet branding. Vehicle photos are linked from Google Drive, so no image files are stored on the server.
+Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet** in León, Guanajuato, Mexico (Blvd. Adolfo López Mateos 3431 Ote.): a public inventory page with location, map and click-to-call, plus an admin panel with per-person accounts to manage vehicles, and a read-only customer area (`/mi-cuenta`) where buyers see their purchases, payments and balance. The visual identity (black and gold) comes from the BYD | Chevrolet branding. Vehicle photos are linked from Google Drive, so no image files are stored on the server.
 
 ![Home page](docs/img/publico-portada.png)
 
@@ -24,7 +24,7 @@ Website for **Diego Rodríguez**, digital sales advisor for **BYD and Chevrolet*
 | | **Let's Encrypt** (Certbot) | Free HTTPS certificate with auto-renewal |
 | | **UFW** | Firewall: only SSH, HTTP and HTTPS are open |
 | SEO | Server-rendered vehicle pages, schema.org JSON-LD (`AutoDealer`, `Car`, `BreadcrumbList`), dynamic `sitemap.xml`, `robots.txt`, canonical URLs, Open Graph | Discoverability on Google and link previews |
-| Testing | **node:test** (built-in test runner) | 42 security, account and SEO tests against a real MySQL test database |
+| Testing | **node:test** (built-in test runner) | 43 security, account and SEO tests against a real MySQL test database |
 
 ## Architecture
 
@@ -102,6 +102,7 @@ Server scripts (run as root on the VPS):
 | `deploy/usuarios-admin.sh` | Manage admin panel accounts (`listar`, `agregar`, `contrasena`, `cerrar-sesiones`, `quitar`) |
 | `deploy/cambiar-admin.sh` | Shortcut for `usuarios-admin.sh contrasena`: reset one account's password and sign it out |
 | `deploy/usuario-bd-visual.sh` | Create a MariaDB user for GUI clients (DBeaver, HeidiSQL) over an SSH tunnel: read-only or row-edit on the site DB, never the admin accounts table; full access to the practice DB |
+| `deploy/clientes-acceso.sh` | Customer access to `/mi-cuenta`: `listar`, `agregar`, `acceso <email>` (temporary password), `quitar-acceso <email>` |
 | `deploy/reiniciar-practica.sh` | Reset the practice database (`agencia_practica`) to the sample data, or to a copy of the live inventory without admin accounts (`--copia-del-sitio`); never touches the site database |
 | `deploy/llave-github.sh` | Create a read-only deploy key (verifying GitHub's host key) so the server can pull from a private repository |
 
@@ -123,3 +124,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 12. [Client guide](docs/12-guia-cliente.md) ([PDF](docs/guia-cliente.pdf)): for the business owner: sign in, change password, add cars and photos; no server details
 13. [MariaDB with a GUI](docs/13-mariadb-visual.md): DBeaver/HeidiSQL over an SSH tunnel, port 3306 stays closed
 14. [SQL exam prep](docs/14-examen-sql.md): how to reach the practice DB from Hostinger, cheat sheet, 100-point mock exam with verified answers
+15. [Customer account](docs/15-mi-cuenta-clientes.md): buyers sign in at `/mi-cuenta` to see only their own purchases, payments and balance

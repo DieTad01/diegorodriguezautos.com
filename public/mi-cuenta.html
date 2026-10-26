@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mi cuenta · Diego Rodríguez Autos</title>
+  <meta name="description" content="Consulta tus compras, pagos y saldo con Diego Rodríguez, asesor BYD | Chevrolet.">
+  <meta name="theme-color" content="#050608">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="admin cuenta">
+
+  <header class="sitio">
+    <div class="contenedor barra">
+      <a class="logo" href="/" aria-label="Ver sitio">
+        <picture>
+          <source srcset="/img/logo-byd-chevrolet.webp" type="image/webp">
+          <img src="/img/logo-byd-chevrolet.png" alt="BYD | Chevrolet" width="580" height="125">
+        </picture>
+      </a>
+      <nav>
+        <a href="/">Ver autos</a>
+        <button type="button" id="btn-salir" class="enlace" hidden>Cerrar sesión</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="contenedor">
+
+    <!-- 1) Entrar -->
+    <section id="seccion-login" class="tarjeta login" hidden>
+      <h1>Mi cuenta</h1>
+      <p class="ayuda">Consulta tus compras, tus pagos y cuánto te falta por pagar.</p>
+      <form id="form-login">
+        <label>Correo electrónico
+          <input name="email" type="email" autocomplete="username" required maxlength="120">
+        </label>
+        <label>Contraseña
+          <input name="password" type="password" autocomplete="current-password" required maxlength="200">
+        </label>
+        <p class="mensaje error" id="error-login" role="alert"></p>
+        <button type="submit">Entrar</button>
+      </form>
+      <p class="ayuda">¿Aún no tienes acceso u olvidaste tu contraseña? Pídelo a tu asesor:
+        <a href="tel:+524777321263">477 732 12 63</a>.</p>
+    </section>
+
+    <!-- 2) Mi cuenta (solo con sesión) -->
+    <section id="seccion-cuenta" hidden>
+      <h1 id="saludo">Mi cuenta</h1>
+      <p class="cuenta">
+        <span id="correo-cliente"></span>
+        · <button type="button" id="btn-contrasena" class="enlace">Cambiar mi contraseña</button>
+      </p>
+      <p id="estado-cuenta" class="estado" role="status"></p>
+
+      <form id="form-contrasena" class="tarjeta" hidden>
+        <h2>Cambiar mi contraseña</h2>
+        <p class="ayuda">Mínimo 12 caracteres. Al guardarla se cierra tu sesión en tus otros dispositivos.</p>
+        <div class="campos">
+          <label>Contraseña actual
+            <input name="actual" type="password" autocomplete="current-password" required maxlength="200">
+          </label>
+          <label>Contraseña nueva
+            <input name="nueva" type="password" autocomplete="new-password" required minlength="12" maxlength="200">
+          </label>
+          <label>Repite la nueva
+            <input name="repetida" type="password" autocomplete="new-password" required minlength="12" maxlength="200">
+          </label>
+        </div>
+        <p class="mensaje error" id="error-contrasena" role="alert"></p>
+        <div class="acciones">
+          <button type="submit">Guardar contraseña</button>
+          <button type="button" id="btn-cancelar-contrasena" class="secundario">Cancelar</button>
+        </div>
+      </form>
+
+      <div class="resumen">
+        <div class="tarjeta dato"><span>Total de mis compras</span><strong id="total-compras">—</strong></div>
+        <div class="tarjeta dato"><span>Pagado</span><strong id="total-pagado">—</strong></div>
+        <div class="tarjeta dato saldo"><span>Saldo pendiente</span><strong id="total-saldo">—</strong></div>
+      </div>
+
+      <h2>Mis compras</h2>
+      <p id="sin-compras" class="ayuda" hidden>Todavía no tienes compras registradas.</p>
+      <div class="tabla-scroll">
+        <table class="tabla tabla-cuenta" id="tabla-compras">
+          <thead>
+            <tr><th>Vehículo</th><th>Fecha</th><th>Precio</th><th>Pagado</th><th>Saldo</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h2>Mis pagos</h2>
+      <p id="sin-pagos" class="ayuda" hidden>Todavía no hay pagos registrados.</p>
+      <div class="tabla-scroll">
+        <table class="tabla tabla-cuenta" id="tabla-pagos">
+          <thead>
+            <tr><th>Fecha</th><th>Vehículo</th><th>Método</th><th>Monto</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <p class="ayuda nota-cuenta">¿Ves algo que no coincide? Llama o escribe a tu asesor:
+        <a href="tel:+524777321263">477 732 12 63</a>.</p>
+    </section>
+  </main>
+
+  <script src="/js/comun.js"></script>
+  <script src="/js/mi-cuenta.js"></script>
+</body>
+</html>

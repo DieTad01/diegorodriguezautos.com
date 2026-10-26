@@ -8,6 +8,7 @@ const express = require('express');
 const helmet = require('helmet');
 const rutasVehiculos = require('./routes/vehiculos');
 const rutasAdmin = require('./routes/admin');
+const rutasCliente = require('./routes/cliente');
 const paginas = require('./routes/paginas');
 const { URL_SITIO } = require('./sitio');
 
@@ -65,6 +66,11 @@ function crearApp() {
     next();
   });
   app.use('/api/admin', rutasAdmin);
+  app.use('/api/cliente', (req, res, next) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
+  app.use('/api/cliente', rutasCliente);
   app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
   });
@@ -72,6 +78,10 @@ function crearApp() {
   app.get('/admin', (req, res) => {
     res.set('X-Robots-Tag', 'noindex, nofollow');
     res.sendFile(path.join(PUBLICO, 'admin.html'));
+  });
+  app.get('/mi-cuenta', (req, res) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(path.join(PUBLICO, 'mi-cuenta.html'));
   });
   app.use(paginas.router);
   app.use(express.static(PUBLICO, {

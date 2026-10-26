@@ -4,6 +4,9 @@ Allow: /
 # El panel de administración y su API no deben aparecer en buscadores
 Disallow: /admin
 Disallow: /api/admin/
+# Mi cuenta de los clientes (privada)
+Disallow: /mi-cuenta
+Disallow: /api/cliente/
 # /api/vehiculos se deja abierto: Google lo necesita para ver el inventario de la portada
 
 Sitemap: https://diegorodriguezautos.com/sitemap.xml

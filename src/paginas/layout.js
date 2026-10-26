@@ -38,7 +38,7 @@ function pie() {
         <p class="oro">Seguimos avanzando contigo.</p>
         <p>${esc(NEGOCIO.calle)}, C.P. ${esc(NEGOCIO.cp)}, ${esc(NEGOCIO.ciudad)}, ${esc(NEGOCIO.estadoCorto)}, México</p>
         <p>${esc(NEGOCIO.asesor)} · Asesor Digital · <a href="tel:${NEGOCIO.telefono}">${esc(NEGOCIO.telefonoVisible)}</a></p>
-        <p><a href="/aviso-de-privacidad">Aviso de privacidad</a></p>
+        <p><a href="/aviso-de-privacidad">Aviso de privacidad</a> · <a href="/mi-cuenta" rel="nofollow">Mi cuenta (clientes)</a></p>
       </div>
     </div>
   </footer>`;

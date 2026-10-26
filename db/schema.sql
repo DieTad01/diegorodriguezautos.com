@@ -54,6 +54,20 @@ CREATE TABLE IF NOT EXISTS clientes (
   UNIQUE KEY uq_clientes_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Acceso de los clientes (compradores) a "Mi cuenta" (/mi-cuenta).
+-- Se agrega solo si falta: así funciona en bases que ya existían, en
+-- MariaDB y en MySQL (que no tiene ADD COLUMN IF NOT EXISTS).
+--   password_hash  NULL = ese cliente no puede entrar (aún no tiene acceso)
+--   sesiones_desde las sesiones abiertas antes de este momento (ms) dejan de valer
+SET @falta_acceso = (SELECT COUNT(*) = 0 FROM information_schema.columns
+  WHERE table_schema = DATABASE() AND table_name = 'clientes' AND column_name = 'password_hash');
+SET @sql_acceso = IF(@falta_acceso,
+  'ALTER TABLE clientes ADD COLUMN password_hash VARCHAR(255) NULL AFTER email, ADD COLUMN sesiones_desde BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER password_hash, ADD COLUMN ultimo_acceso TIMESTAMP NULL AFTER sesiones_desde',
+  'DO 0');
+PREPARE agregar_acceso FROM @sql_acceso;
+EXECUTE agregar_acceso;
+DEALLOCATE PREPARE agregar_acceso;
+
 -- Una venta = un auto vendido a un cliente
 CREATE TABLE IF NOT EXISTS ventas (
   id           INT UNSIGNED  NOT NULL AUTO_INCREMENT,

@@ -267,4 +267,9 @@ module.exports = {
   limitarIntentos,
   registrarFallo,
   limpiarFallos,
+  // Para el acceso de clientes (src/clientes-auth.js)
+  DURACION_MS,
+  opcionesCookie,
+  leerCookie,
+  verificarRelleno: (password) => verificarPassword(password, HASH_RELLENO),
 };

@@ -801,6 +801,110 @@ test('SEO: www redirige al dominio sin www y no sirve para mandar a otro sitio',
 });
 
 // ---------------------------------------------------------------
+// Mi cuenta (clientes / compradores)
+// ---------------------------------------------------------------
+
+async function entrarCliente(email, password, ip = `10.6.${Math.floor(++ipPrueba / 250)}.${ipPrueba % 250}`) {
+  const r = await peticion('/api/cliente/login', { method: 'POST', body: { email, password }, headers: { 'X-Forwarded-For': ip } });
+  return { ...r, cookie: r.status === 200 ? r.headers.get('set-cookie').split(';')[0] : null };
+}
+
+test('Mi cuenta: cada cliente ve SOLO sus compras y pagos; sesiones de cliente y admin no se mezclan', async () => {
+  // Datos propios de esta prueba (autos "vendidos" para no afectar el inventario)
+  const auto = async (modelo) => (await pool.execute(
+    "INSERT INTO vehiculos (marca, modelo, anio, precio, kilometraje, estado) VALUES ('Prueba', ?, 2022, 300000, 0, 'vendido')", [modelo]))[0].insertId;
+  const cliente = async (nombre, email, clave) => (await pool.execute(
+    'INSERT INTO clientes (nombre, email, password_hash, sesiones_desde) VALUES (?, ?, ?, ?)',
+    [nombre, email, clave ? hashPassword(clave) : null, Date.now()]))[0].insertId;
+  const autoA = await auto('ModeloA');
+  const autoB = await auto('ModeloB');
+  const idA = await cliente('Ana Prueba', 'ana@prueba.mx', 'clave-de-ana-123');
+  const idB = await cliente('Beto Prueba', 'beto@prueba.mx', 'clave-de-beto-123');
+  await cliente('Sin Acceso', 'sin@prueba.mx', null);
+  const ventaA = (await pool.execute("INSERT INTO ventas (vehiculo_id, cliente_id, fecha, precio_final) VALUES (?, ?, '2026-09-01', 300000)", [autoA, idA]))[0].insertId;
+  const ventaB = (await pool.execute("INSERT INTO ventas (vehiculo_id, cliente_id, fecha, precio_final) VALUES (?, ?, '2026-09-02', 250000)", [autoB, idB]))[0].insertId;
+  await pool.execute("INSERT INTO pagos (venta_id, fecha, monto, metodo) VALUES (?, '2026-09-01', 100000, 'transferencia'), (?, '2026-09-15', 50000, 'efectivo')", [ventaA, ventaA]);
+  await pool.execute("INSERT INTO pagos (venta_id, fecha, monto, metodo) VALUES (?, '2026-09-02', 250000, 'tarjeta')", [ventaB]);
+  try {
+    // Login
+    const malo = await entrarCliente('ana@prueba.mx', 'otra-clave-cualquiera');
+    const noExiste = await entrarCliente('nadie@prueba.mx', 'otra-clave-cualquiera');
+    assert.equal(malo.status, 401);
+    assert.equal(noExiste.texto, malo.texto, 'mismo mensaje: no revela qué correos existen');
+    assert.equal((await entrarCliente('sin@prueba.mx', '')).status, 401, 'sin acceso no entra');
+    for (const email of ["' OR '1'='1", "ana@prueba.mx' -- ", { $ne: null }, ['ana@prueba.mx']]) {
+      assert.equal((await entrarCliente(email, "' OR '1'='1")).status, 401, JSON.stringify(email));
+    }
+    const a = await entrarCliente('ANA@prueba.mx', 'clave-de-ana-123');
+    assert.equal(a.status, 200, 'el correo no distingue mayúsculas');
+    assert.match(a.headers.get('set-cookie'), /HttpOnly/i);
+    assert.match(a.headers.get('set-cookie'), /SameSite=Strict/i);
+
+    // Ana ve solo lo suyo, aunque pida el id de Beto
+    const estado = async (c, ruta = '/api/cliente/estado') => {
+      const r = await fetch(base + ruta, { headers: { Cookie: c } });
+      return { status: r.status, json: r.status === 200 ? await r.json() : null };
+    };
+    const e = await estado(a.cookie, `/api/cliente/estado?cliente_id=${idB}&id=${idB}`);
+    assert.equal(e.status, 200);
+    assert.equal(e.json.cliente.nombre, 'Ana Prueba');
+    assert.deepEqual(e.json.compras.map((c) => c.modelo), ['ModeloA']);
+    assert.equal(e.json.compras[0].saldo, 150000);
+    assert.equal(e.json.compras[0].fecha, '2026-09-01');
+    assert.equal(e.json.pagos.length, 2);
+    assert.ok(e.json.pagos.every((p) => p.venta === ventaA));
+    assert.doesNotMatch(JSON.stringify(e.json), /Beto|ModeloB|password|hash/);
+
+    // Cookies alteradas o cruzadas
+    const [, valor] = a.cookie.split('=');
+    const [, emitida, firma] = valor.split('.');
+    assert.equal((await estado(`sesion_cliente=${idB}.${emitida}.${firma}`)).status, 401, 'cambiar el id por el de otro');
+    const admin = await entrar('admin', 'contraseña-de-prueba');
+    assert.equal((await estado(`sesion_cliente=${admin.cookie.split('=')[1]}`)).status, 401, 'cookie de admin como cliente');
+    assert.equal((await estado(admin.cookie)).status, 401, 'sesión de admin no abre Mi cuenta');
+    assert.equal((await conCookie(`sesion_admin=${valor}`)).status, 401, 'cookie de cliente como admin');
+    assert.equal((await conCookie(a.cookie)).status, 401, 'sesión de cliente no abre el panel /admin');
+
+    // CSRF y sin sesión
+    const csrf = await peticion('/api/cliente/contrasena', {
+      method: 'POST', body: { actual: 'clave-de-ana-123', nueva: 'otra-clave-larga-1' }, headers: { Cookie: a.cookie, Origin: 'https://sitio-malo.com' },
+    });
+    assert.equal(csrf.status, 403);
+    assert.equal((await estado('')).status, 401);
+
+    // Cambiar su contraseña: cierra la sesión de sus otros dispositivos
+    const otroDispositivo = await entrarCliente('ana@prueba.mx', 'clave-de-ana-123');
+    const cambiar = (body) => peticion('/api/cliente/contrasena', { method: 'POST', body, headers: { Cookie: a.cookie, 'X-Forwarded-For': '10.5.5.5' } });
+    assert.equal((await cambiar({ actual: 'equivocada-12345', nueva: 'ana-nueva-clave-99' })).status, 400);
+    assert.equal((await cambiar({ actual: 'clave-de-ana-123', nueva: 'corta' })).status, 400);
+    await espera(5);
+    const ok = await cambiar({ actual: 'clave-de-ana-123', nueva: 'nueva-clave-segura-99' });
+    assert.equal(ok.status, 200);
+    const cookieNueva = ok.headers.get('set-cookie').split(';')[0];
+    assert.equal((await estado(cookieNueva)).status, 200, 'este dispositivo sigue dentro');
+    assert.equal((await estado(otroDispositivo.cookie)).status, 401, 'los demás salen');
+    assert.equal((await entrarCliente('ana@prueba.mx', 'clave-de-ana-123')).status, 401);
+
+    // Quitarle el acceso invalida su sesión al instante
+    await pool.execute('UPDATE clientes SET password_hash = NULL WHERE id = ?', [idA]);
+    assert.equal((await estado(cookieNueva)).status, 401);
+
+    // La página existe y no se indexa
+    const pagina = await fetch(`${base}/mi-cuenta`);
+    assert.equal(pagina.status, 200);
+    assert.match(pagina.headers.get('x-robots-tag'), /noindex/);
+    assert.match(fs.readFileSync(path.join(__dirname, '..', 'public', 'robots.txt'), 'utf8'), /Disallow: \/mi-cuenta/);
+  } finally {
+    await pool.query('SET FOREIGN_KEY_CHECKS = 0');
+    await pool.execute('DELETE FROM pagos WHERE venta_id IN (?, ?)', [ventaA, ventaB]);
+    await pool.execute('DELETE FROM ventas WHERE id IN (?, ?)', [ventaA, ventaB]);
+    await pool.execute("DELETE FROM clientes WHERE email LIKE '%@prueba.mx'");
+    await pool.execute('DELETE FROM vehiculos WHERE id IN (?, ?)', [autoA, autoB]);
+    await pool.query('SET FOREIGN_KEY_CHECKS = 1');
+  }
+});
+
+// ---------------------------------------------------------------
 // Archivos privados
 // ---------------------------------------------------------------
 
