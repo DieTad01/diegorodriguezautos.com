@@ -102,6 +102,7 @@ Server scripts (run as root on the VPS):
 | `deploy/usuarios-admin.sh` | Manage admin panel accounts (`listar`, `agregar`, `contrasena`, `cerrar-sesiones`, `quitar`) |
 | `deploy/cambiar-admin.sh` | Shortcut for `usuarios-admin.sh contrasena`: reset one account's password and sign it out |
 | `deploy/usuario-bd-visual.sh` | Create a MariaDB user for GUI clients (DBeaver, HeidiSQL) over an SSH tunnel: read-only or row-edit on the site DB, never the admin accounts table; full access to the practice DB |
+| `deploy/reiniciar-practica.sh` | Reset the practice database (`agencia_practica`) to the sample data, or to a copy of the live inventory without admin accounts (`--copia-del-sitio`); never touches the site database |
 | `deploy/llave-github.sh` | Create a read-only deploy key (verifying GitHub's host key) so the server can pull from a private repository |
 
 ## Documentation (Spanish)
@@ -121,3 +122,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 11. [Developer access](docs/11-acceso-desarrollador.md): your SSH key, GitHub, your panel account and how to give the client panel-only access
 12. [Client guide](docs/12-guia-cliente.md) ([PDF](docs/guia-cliente.pdf)): for the business owner: sign in, change password, add cars and photos; no server details
 13. [MariaDB with a GUI](docs/13-mariadb-visual.md): DBeaver/HeidiSQL over an SSH tunnel, port 3306 stays closed
+14. [SQL exam prep](docs/14-examen-sql.md): how to reach the practice DB from Hostinger, cheat sheet, 100-point mock exam with verified answers

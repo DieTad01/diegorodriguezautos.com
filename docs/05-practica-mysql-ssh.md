@@ -552,7 +552,16 @@ scp agencia:~/respaldos/sitio-AAAA-MM-DD.sql .
 
 ## 8. Reiniciar la práctica
 
-¿Rompiste algo? Empieza de cero:
+¿Rompiste algo? Lo más fácil, como root en el VPS:
+
+```bash
+bash /var/www/diegorodriguezautos.com/deploy/reiniciar-practica.sh                    # datos de ejemplo
+bash /var/www/diegorodriguezautos.com/deploy/reiniciar-practica.sh --copia-del-sitio  # copia de los autos reales
+```
+
+¿Preparas un examen? Ver [14. Prepárate para tu examen de SQL](14-examen-sql.md).
+
+A mano, con `~/.my.cnf`:
 
 ```bash
 mysql -e "DROP DATABASE agencia_practica; CREATE DATABASE agencia_practica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
