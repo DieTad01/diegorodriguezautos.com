@@ -53,6 +53,7 @@ src/                     Server code (never served)
   routes/                Public API, admin API and server-rendered pages
 db/schema.sql            Tables and constraints
 db/datos-ejemplo.sql     Sample data for SQL practice
+db/proyecto/             Database course final project (6 units, concurrency simulator, JDBC/ODBC)
 scripts/usuarios-admin.js  Manage admin accounts: list, add, reset password, sign out everywhere, remove
 test/seguridad.test.js   Security test suite
 deploy/nginx.conf        Nginx site configuration
@@ -125,3 +126,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 13. [MariaDB with a GUI](docs/13-mariadb-visual.md): DBeaver/HeidiSQL over an SSH tunnel, port 3306 stays closed
 14. [SQL exam prep](docs/14-examen-sql.md): how to reach the practice DB from Hostinger, cheat sheet, 100-point mock exam with verified answers
 15. [Customer account](docs/15-mi-cuenta-clientes.md): buyers sign in at `/mi-cuenta` to see only their own purchases, payments and balance
+16. [Database course final project](docs/16-proyecto-taller-bd.md): DDL, DML, access control, concurrency, stored procedures/triggers and JDBC/ODBC on a separate `agencia_proyecto` database, with an evidence runner

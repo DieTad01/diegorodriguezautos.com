@@ -20,6 +20,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 13 | [**MariaDB visual**](13-mariadb-visual.md) | Ver y manejar la base con DBeaver o HeidiSQL desde tu computadora, por túnel SSH |
 | 14 | [**Prepárate para tu examen de SQL**](14-examen-sql.md) | Entrar a la base desde Hostinger, acordeón, simulacro de 100 puntos con respuestas comprobadas y trampas típicas |
 | 15 | [**Mi cuenta (clientes)**](15-mi-cuenta-clientes.md) | Los compradores ven sus compras, pagos y saldo en `/mi-cuenta`; cómo darles acceso y registrar ventas y pagos |
+| 16 | [**Proyecto final · Taller de BD**](16-proyecto-taller-bd.md) | Las 6 unidades del curso sobre la base `agencia_proyecto`: qué archivo cubre cada actividad, cómo correrlo y cómo presentarlo |
 
 ## Comandos del servidor (en hPanel → VPS → Terminal)
 
@@ -33,6 +34,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | Quitar una cuenta | `bash /var/www/diegorodriguezautos.com/deploy/usuarios-admin.sh quitar <usuario>` |
 | Usuario de MariaDB para DBeaver/HeidiSQL | `bash /var/www/diegorodriguezautos.com/deploy/usuario-bd-visual.sh` |
 | Dar acceso a un comprador a Mi cuenta | `bash /var/www/diegorodriguezautos.com/deploy/clientes-acceso.sh acceso <correo>` |
+| Correr el proyecto final del Taller de BD (6 unidades + evidencias) | `bash /var/www/diegorodriguezautos.com/db/proyecto/ejecutar.sh --con-conectividad` |
 | Dejar la base de práctica como nueva (antes de practicar) | `bash /var/www/diegorodriguezautos.com/deploy/reiniciar-practica.sh` |
 | Preparar el VPS para un repositorio privado | `bash /var/www/diegorodriguezautos.com/deploy/llave-github.sh` |
 | Reinstalar o aplicar cambios de Nginx/HTTPS | `bash /var/www/diegorodriguezautos.com/deploy/instalar.sh` |

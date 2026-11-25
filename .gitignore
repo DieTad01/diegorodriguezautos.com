@@ -15,10 +15,13 @@ id_ed25519*
 *.dump
 !db/schema.sql
 !db/datos-ejemplo.sql
+!db/proyecto/*.sql
 respaldos/
 
 # Dependencias y logs
 node_modules/
+__pycache__/
+*.pyc
 npm-debug.log*
 logs/
 *.log
