@@ -22,6 +22,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 15 | [**Mi cuenta (clientes)**](15-mi-cuenta-clientes.md) | Los compradores ven sus compras, pagos y saldo en `/mi-cuenta`; cómo darles acceso y registrar ventas y pagos |
 | 16 | [**Proyecto final · Taller de BD**](16-proyecto-taller-bd.md) | Las 6 unidades del curso sobre la base `agencia_proyecto`: qué archivo cubre cada actividad, cómo correrlo y cómo presentarlo |
 | 17 | [**Manual de comandos**](17-manual-comandos.md) | Cada comando del proyecto explicado: sintaxis, qué hace, ejemplo real y errores frecuentes |
+| 18 | [**Reporte del proyecto final**](18-reporte-proyecto.md) | Por criterio de la rúbrica: enunciado y requerimientos, E-R (Chen), modelo relacional, normalización hasta FNBC, scripts, vistas, usuarios, transacciones, procedimientos, triggers y el sistema en Java |
 
 ## Comandos del servidor (en hPanel → VPS → Terminal)
 

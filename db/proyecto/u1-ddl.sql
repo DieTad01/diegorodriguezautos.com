@@ -20,7 +20,9 @@ FROM information_schema.schemata WHERE schema_name = 'prueba_ddl';
 DROP DATABASE prueba_ddl;                                                       -- eliminar
 SHOW DATABASES LIKE 'prueba_ddl';                                               -- ya no existe
 
--- La base del proyecto (ejecutar.sh la borra y crea limpia antes de este script)
+-- La base del proyecto (ejecutar.sh la borra antes, para empezar limpio)
+CREATE DATABASE IF NOT EXISTS agencia_proyecto
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE agencia_proyecto;
 
 -- ---------- 1.2 / 1.2.b Esquema con restricciones ----------

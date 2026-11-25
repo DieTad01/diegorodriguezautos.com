@@ -10,7 +10,7 @@ USE agencia_proyecto;
 -- Limpiar lo de una ejecución anterior
 DROP USER IF EXISTS 'p_gerente'@'localhost', 'p_vendedor'@'localhost', 'p_ana'@'localhost',
                     'p_carlos'@'localhost', 'p_consulta'@'localhost', 'p_app'@'localhost',
-                    'p_temporal'@'localhost', 'p_temporal2'@'localhost';
+                    'p_sistema'@'localhost', 'p_temporal'@'localhost', 'p_temporal2'@'localhost';
 DROP ROLE IF EXISTS rol_gerente;
 DROP ROLE IF EXISTS rol_vendedor;
 DROP ROLE IF EXISTS rol_cliente;
@@ -39,6 +39,7 @@ CREATE USER 'p_ana'@'localhost'      IDENTIFIED BY '__CLAVE_ANA__';
 CREATE USER 'p_carlos'@'localhost'   IDENTIFIED BY '__CLAVE_CARLOS__';
 CREATE USER 'p_consulta'@'localhost' IDENTIFIED BY '__CLAVE_CONSULTA__';
 CREATE USER 'p_app'@'localhost'      IDENTIFIED BY '__CLAVE_APP__';      -- la usa la unidad 6 (JDBC/ODBC)
+CREATE USER 'p_sistema'@'localhost'  IDENTIFIED BY '__CLAVE_SISTEMA__';  -- el sistema en Java: SOLO procedimientos
 
 -- ---------- 3.3 Privilegios directos (GRANT / REVOKE) ----------
 -- Nivel base de datos: solo lectura
@@ -58,6 +59,8 @@ WHERE grantee = "'p_consulta'@'localhost'" ORDER BY column_name;
 
 -- La aplicación: leer y escribir filas, ejecutar procedimientos; nunca DROP/ALTER
 GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON agencia_proyecto.* TO 'p_app'@'localhost';
+-- El sistema en Java: SOLO puede ejecutar procedimientos; no lee ni escribe tablas directamente
+GRANT EXECUTE ON agencia_proyecto.* TO 'p_sistema'@'localhost';
 
 -- ---------- 3.4 Roles ----------
 CREATE ROLE rol_gerente;

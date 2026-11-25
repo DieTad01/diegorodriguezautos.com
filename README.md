@@ -128,3 +128,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 15. [Customer account](docs/15-mi-cuenta-clientes.md): buyers sign in at `/mi-cuenta` to see only their own purchases, payments and balance
 16. [Database course final project](docs/16-proyecto-taller-bd.md): DDL, DML, access control, concurrency, stored procedures/triggers and JDBC/ODBC on a separate `agencia_proyecto` database, with an evidence runner
 17. [Command manual](docs/17-manual-comandos.md): every SQL, client and connectivity command used in the project, explained with real examples
+18. [Final project report](docs/18-reporte-proyecto.md): requirements, Chen ER model, relational model, normalization to BCNF and a Java system that works only through stored procedures

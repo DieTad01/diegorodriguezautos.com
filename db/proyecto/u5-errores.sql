@@ -19,3 +19,16 @@ UPDATE vehiculos SET precio = 1 WHERE id = 2;
 DELETE FROM ventas WHERE id = 6;
 SELECT id, modelo, estado AS estado_tras_cancelar FROM vehiculos WHERE id = 10;
 SELECT accion, detalle FROM bitacora ORDER BY id DESC LIMIT 2;
+-- Procedimientos CRUD: validaciones
+CALL alta_cliente('Al', NULL, NULL, @x);                       -- nombre muy corto
+CALL alta_cliente('Otra Ana', NULL, 'ana@ejemplo.com', @x);    -- correo repetido
+CALL alta_cliente('Sin Arroba', NULL, 'correo-malo', @x);      -- correo inválido
+CALL actualizar_precio(2, 1000);                               -- auto vendido (lo frena el trigger)
+CALL cambiar_estado_vehiculo(2, 'disponible');                 -- vendido: solo cancelando la venta
+CALL registrar_pago(999, 10, 'efectivo', @x);                  -- venta inexistente
+CALL baja_cliente(1);                                          -- tiene compras: se conserva el historial
+CALL estado_cuenta(999);                                       -- cliente inexistente
+-- Cancelar una venta: transacción que borra pagos y venta, y el auto vuelve a estar disponible
+CALL cancelar_venta(4);
+SELECT COUNT(*) AS pagos_de_la_venta_4 FROM pagos WHERE venta_id = 4;
+SELECT id, modelo, estado AS estado_tras_cancelar FROM vehiculos WHERE id = 8;

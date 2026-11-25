@@ -1,6 +1,6 @@
 # 16. Proyecto final · Taller de Base de Datos
 
-[← Volver al índice](README.md)
+[← Volver al índice](README.md) · Reporte para entregar (por criterio de la rúbrica): [18. Reporte del proyecto](18-reporte-proyecto.md)
 
 Proyecto integrador que cubre **las 6 unidades** del curso sobre el caso real de este sitio: la agencia de Diego Rodríguez (BYD | Chevrolet, León). Todo corre en MariaDB, en una base **aparte**, `agencia_proyecto`. La base del sitio (`agencia_autos`) no se toca.
 
@@ -25,7 +25,7 @@ bash /var/www/diegorodriguezautos.com/db/proyecto/ejecutar.sh --con-conectividad
 
 Tarda alrededor de un minuto. La primera vez, la unidad 6 instala Java y el conector ODBC.
 
-- **Al terminar** muestra cuántos objetos creó (7 tablas, 5 vistas, 5 procedimientos, 3 funciones, 5 triggers, 6 usuarios y 3 roles) y dónde quedaron las evidencias.
+- **Al terminar** muestra cuántos objetos creó (7 tablas, 5 vistas, 15 procedimientos, 3 funciones, 5 triggers, 7 usuarios y 3 roles) y dónde quedaron las evidencias.
 - **Las evidencias** quedan en `/root/evidencias-proyecto/`: un archivo `.txt` por unidad, con cada instrucción y su resultado. Bájalas a tu computadora con:
   ```bash
   scp -r root@diegorodriguezautos.com:/root/evidencias-proyecto .
@@ -115,7 +115,7 @@ Además hay dos tablas de apoyo: `bitacora`, que llenan los triggers, y `existen
 |---|---|---|
 | **A 3.1** Usuarios e inicios de sesión | `u3-acceso.sql`: tipos de usuario (root contra usuarios de aplicación), `CREATE USER`, `ALTER USER` (contraseña, límites, `ACCOUNT LOCK/UNLOCK`), `RENAME USER`, `DROP USER`. Ver la nota sobre SQL Server abajo | `u3-acceso.txt` |
 | **A 3.3** Otorgar, negar y revocar permisos | `GRANT` a nivel base, tabla, **columna** y procedimiento; `REVOKE`. MariaDB no tiene `DENY`: se otorga solo lo necesario | `u3-acceso.txt` · `u3-pruebas-permisos.txt` |
-| **A 3.3.2** Usuarios y permisos en MariaDB | Lo anterior y **20 pruebas automáticas** entrando como cada usuario: lo permitido funciona y lo negado da `ERROR 1142`/`1143` | `u3-pruebas-permisos.txt` |
+| **A 3.3.2** Usuarios y permisos en MariaDB | Lo anterior y **23 pruebas automáticas** entrando como cada usuario: lo permitido funciona y lo negado da `ERROR 1142`/`1143` | `u3-pruebas-permisos.txt` |
 | **A 3.4.2** Creación de rol nuevo | `CREATE ROLE` (`rol_gerente`, `rol_vendedor`, `rol_cliente`), `GRANT rol TO usuario`, `SET DEFAULT ROLE`, rol dentro de otro rol, y **seguridad por fila**: cada cliente ve solo sus compras con vistas que filtran por `USER()` | `u3-acceso.txt` · `u3-pruebas-permisos.txt` |
 
 ### Unidad 4 · Concurrencia
@@ -139,6 +139,7 @@ Además hay dos tablas de apoyo: `bitacora`, que llenan los triggers, y `existen
 
 | Actividad | Dónde está | Evidencia |
 |---|---|---|
+| **Sistema con procedimientos** | `SistemaAgencia.java`: menú de consulta, inserción, actualización y eliminación, todo con llamadas a procedimientos y un usuario con solo EXECUTE | `u6-conectividad.txt` (`probar.sh --menu` para usarlo) |
 | **A 6.1** Conexión con ODBC y JDBC | **JDBC:** `ConexionJDBC.java` con MariaDB Connector/J 3.5.1: Statement, PreparedStatement, CallableStatement con parámetro OUT y función, transacción con rollback, y un permiso negado. **ODBC:** DSN en unixODBC, consulta con `isql` y `conexion_odbc.py` con pyodbc (vista, parámetros `?`, procedimiento, rollback) | `u6-conectividad.txt` |
 | **A 6.3** Aplicación con Vibe Coding para conexión de BD | **Este sitio**, hecho con Claude Code: Node.js + Express + mysql2 contra MariaDB, con consultas parametrizadas, pool de conexiones y transacciones. Panel `/admin` (CRUD del inventario) y `/mi-cuenta` (cada cliente ve sus compras), con 43 pruebas automáticas (`npm test`) | https://diegorodriguezautos.com · `src/` · `test/` |
 | A 6.2 Insignia Vibe Coding | Es personal | — |

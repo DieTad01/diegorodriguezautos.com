@@ -2,7 +2,8 @@
 # =============================================================
 # UNIDAD 6. Prueba de conectividad JDBC y ODBC (actividad A6.1)
 # Uso, como root en el VPS, después de db/proyecto/ejecutar.sh:
-#   bash /var/www/diegorodriguezautos.com/db/proyecto/u6-conectividad/probar.sh
+#   bash /var/www/diegorodriguezautos.com/db/proyecto/u6-conectividad/probar.sh          # todo (con la demo del sistema)
+#   bash /var/www/diegorodriguezautos.com/db/proyecto/u6-conectividad/probar.sh --menu   # abre el sistema con su menú
 # Instala (si faltan) Java, el conector ODBC de MariaDB y pyodbc; descarga
 # el conector JDBC verificando su huella; compila y ejecuta ambos programas.
 # =============================================================
@@ -18,6 +19,8 @@ JAR="/opt/mariadb-jdbc/mariadb-java-client-$JDBC_VERSION.jar"
 # shellcheck disable=SC1090
 . "$CREDENCIALES"
 export PROYECTO_USUARIO="p_app" PROYECTO_CLAVE="$CLAVE_APP"
+MENU=0
+[ "${1:-}" = "--menu" ] && MENU=1
 
 echo "==> Instalando lo necesario (solo la primera vez)"
 faltan=()
@@ -52,6 +55,16 @@ CHARSET     = utf8mb4
 INI
 fi
 
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+javac -encoding UTF-8 -d "$TMP" -cp "$JAR" ConexionJDBC.java SistemaAgencia.java
+JAVA=(java -Dstdout.encoding=UTF-8 -Dfile.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dmariadb.logging.disable=true -cp "$TMP:$JAR")
+
+if [ "$MENU" = 1 ]; then   # sistema interactivo, con el usuario que SOLO ejecuta procedimientos
+  PROYECTO_USUARIO="p_sistema" PROYECTO_CLAVE="$CLAVE_SISTEMA" "${JAVA[@]}" SistemaAgencia
+  exit 0
+fi
+
 echo; echo "==> ODBC: driver y DSN registrados"
 odbcinst -q -d
 odbcinst -q -s
@@ -62,7 +75,7 @@ echo; echo "==> ODBC desde Python (pyodbc)"
 "$(python_con_pyodbc)" conexion_odbc.py
 
 echo; echo "==> JDBC desde Java"
-TMP="$(mktemp -d)"
-javac -encoding UTF-8 -d "$TMP" -cp "$JAR" ConexionJDBC.java
-java -Dstdout.encoding=UTF-8 -Dfile.encoding=UTF-8 -cp "$TMP:$JAR" ConexionJDBC
-rm -rf "$TMP"
+"${JAVA[@]}" ConexionJDBC
+
+echo; echo "==> Sistema de la agencia (Java + procedimientos almacenados, usuario p_sistema)"
+PROYECTO_USUARIO="p_sistema" PROYECTO_CLAVE="$CLAVE_SISTEMA" "${JAVA[@]}" SistemaAgencia --demo

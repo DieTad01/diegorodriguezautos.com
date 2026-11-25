@@ -152,6 +152,172 @@ BEGIN
   SELECT * FROM tmp_plan;
 END //
 
+-- ---------- 5.1 Procedimientos CRUD (los usa el sistema en Java) ----------
+-- Toda la operación de la agencia pasa por estos procedimientos: la
+-- aplicación (usuario p_sistema) solo tiene permiso EXECUTE, nunca toca
+-- las tablas directamente. Cada uno valida sus datos y avisa con SIGNAL.
+
+-- CONSULTA: autos disponibles, con filtros opcionales (NULL = cualquiera)
+CREATE OR REPLACE PROCEDURE buscar_vehiculos(IN p_marca VARCHAR(50), IN p_precio_max DECIMAL(12,2))
+READS SQL DATA
+COMMENT 'CONSULTA: inventario disponible o apartado'
+BEGIN
+  SELECT id, marca, modelo, anio, version, precio, kilometraje, estado, categoria_auto(precio) AS categoria
+  FROM vehiculos
+  WHERE estado <> 'vendido'
+    AND (p_marca IS NULL OR marca = p_marca)
+    AND (p_precio_max IS NULL OR precio <= p_precio_max)
+  ORDER BY precio;
+END //
+
+-- CONSULTA: clientes con su número de compras y saldo
+CREATE OR REPLACE PROCEDURE listar_clientes()
+READS SQL DATA
+COMMENT 'CONSULTA: clientes con compras y saldo'
+BEGIN
+  SELECT c.id, c.nombre, c.telefono, c.email,
+         COUNT(v.id) AS compras,
+         COALESCE(SUM(saldo_venta(v.id)), 0) AS saldo
+  FROM clientes c LEFT JOIN ventas v ON v.cliente_id = c.id
+  GROUP BY c.id, c.nombre, c.telefono, c.email
+  ORDER BY c.nombre;
+END //
+
+-- CONSULTA: estado de cuenta de un cliente (2 resultados: compras y pagos)
+CREATE OR REPLACE PROCEDURE estado_cuenta(IN p_cliente INT)
+READS SQL DATA
+COMMENT 'CONSULTA: compras y pagos de un cliente'
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_cliente) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese cliente no existe';
+  END IF;
+  SELECT v.id AS venta, CONCAT(a.marca, ' ', a.modelo, ' ', a.anio) AS auto, v.fecha,
+         v.precio_final, v.precio_final - saldo_venta(v.id) AS pagado, saldo_venta(v.id) AS saldo
+  FROM ventas v JOIN vehiculos a ON a.id = v.vehiculo_id
+  WHERE v.cliente_id = p_cliente ORDER BY v.fecha;
+  SELECT p.id AS pago, p.venta_id AS venta, p.fecha, p.monto, p.metodo
+  FROM pagos p JOIN ventas v ON v.id = p.venta_id
+  WHERE v.cliente_id = p_cliente ORDER BY p.fecha, p.id;
+END //
+
+-- INSERCIÓN: alta de un cliente
+CREATE OR REPLACE PROCEDURE alta_cliente(IN p_nombre VARCHAR(100), IN p_telefono VARCHAR(15), IN p_email VARCHAR(120), OUT p_id INT)
+MODIFIES SQL DATA
+COMMENT 'INSERCIÓN: registra un cliente nuevo'
+BEGIN
+  SET p_nombre = TRIM(p_nombre), p_email = NULLIF(LOWER(TRIM(p_email)), '');
+  IF p_nombre IS NULL OR CHAR_LENGTH(p_nombre) < 3 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El nombre debe tener al menos 3 letras';
+  END IF;
+  IF p_email IS NOT NULL AND p_email NOT LIKE '%_@_%._%' THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El correo no es válido';
+  END IF;
+  IF p_email IS NOT NULL AND EXISTS (SELECT 1 FROM clientes WHERE email = p_email) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ya hay un cliente con ese correo';
+  END IF;
+  INSERT INTO clientes (nombre, telefono, email) VALUES (p_nombre, NULLIF(TRIM(p_telefono), ''), p_email);
+  SET p_id = LAST_INSERT_ID();
+END //
+
+-- INSERCIÓN: registrar un pago (el trigger trg_pagos_valida impide pagar de más)
+CREATE OR REPLACE PROCEDURE registrar_pago(IN p_venta INT, IN p_monto DECIMAL(12,2), IN p_metodo VARCHAR(20), OUT p_saldo DECIMAL(12,2))
+MODIFIES SQL DATA
+COMMENT 'INSERCIÓN: registra un pago y regresa el saldo'
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM ventas WHERE id = p_venta) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Esa venta no existe';
+  END IF;
+  IF p_metodo NOT IN ('efectivo', 'transferencia', 'tarjeta', 'financiamiento') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Método de pago no válido';
+  END IF;
+  INSERT INTO pagos (venta_id, fecha, monto, metodo) VALUES (p_venta, CURDATE(), p_monto, p_metodo);
+  SET p_saldo = saldo_venta(p_venta);
+END //
+
+-- ACTUALIZACIÓN: datos de contacto de un cliente (NULL = dejar igual)
+CREATE OR REPLACE PROCEDURE actualizar_cliente(IN p_id INT, IN p_telefono VARCHAR(15), IN p_email VARCHAR(120))
+MODIFIES SQL DATA
+COMMENT 'ACTUALIZACIÓN: teléfono y correo de un cliente'
+BEGIN
+  SET p_email = NULLIF(LOWER(TRIM(p_email)), '');
+  IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese cliente no existe';
+  END IF;
+  IF p_email IS NOT NULL AND EXISTS (SELECT 1 FROM clientes WHERE email = p_email AND id <> p_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese correo ya lo tiene otro cliente';
+  END IF;
+  UPDATE clientes
+  SET telefono = COALESCE(NULLIF(TRIM(p_telefono), ''), telefono),
+      email    = COALESCE(p_email, email)
+  WHERE id = p_id;
+END //
+
+-- ACTUALIZACIÓN: precio de un auto (el trigger lo anota en la bitácora y
+-- no permite cambiar el de un auto vendido)
+CREATE OR REPLACE PROCEDURE actualizar_precio(IN p_vehiculo INT, IN p_precio DECIMAL(12,2))
+MODIFIES SQL DATA
+COMMENT 'ACTUALIZACIÓN: precio de un vehículo'
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM vehiculos WHERE id = p_vehiculo) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese vehículo no existe';
+  END IF;
+  IF p_precio IS NULL OR p_precio <= 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El precio debe ser mayor a cero';
+  END IF;
+  UPDATE vehiculos SET precio = p_precio WHERE id = p_vehiculo;
+END //
+
+-- ACTUALIZACIÓN: apartar o liberar un auto (vendido solo con registrar_venta)
+CREATE OR REPLACE PROCEDURE cambiar_estado_vehiculo(IN p_vehiculo INT, IN p_estado VARCHAR(20))
+MODIFIES SQL DATA
+COMMENT 'ACTUALIZACIÓN: disponible <-> apartado'
+BEGIN
+  DECLARE v_actual VARCHAR(20);
+  SELECT estado INTO v_actual FROM vehiculos WHERE id = p_vehiculo;
+  IF v_actual IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese vehículo no existe';
+  ELSEIF v_actual = 'vendido' THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Un auto vendido solo cambia cancelando su venta';
+  ELSEIF p_estado NOT IN ('disponible', 'apartado') THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Estado no válido: usa disponible o apartado';
+  END IF;
+  UPDATE vehiculos SET estado = p_estado WHERE id = p_vehiculo;
+END //
+
+-- ELIMINACIÓN: cancelar una venta en UNA transacción (borra sus pagos y la
+-- venta; el trigger trg_ventas_cancela regresa el auto a disponible)
+CREATE OR REPLACE PROCEDURE cancelar_venta(IN p_venta INT)
+MODIFIES SQL DATA
+COMMENT 'ELIMINACIÓN: cancela una venta y sus pagos'
+BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION, SQLWARNING
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+  IF NOT EXISTS (SELECT 1 FROM ventas WHERE id = p_venta) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Esa venta no existe';
+  END IF;
+  START TRANSACTION;
+    DELETE FROM pagos  WHERE venta_id = p_venta;
+    DELETE FROM ventas WHERE id = p_venta;
+  COMMIT;
+END //
+
+-- ELIMINACIÓN: baja de un cliente (solo si no tiene compras: se conserva el historial)
+CREATE OR REPLACE PROCEDURE baja_cliente(IN p_id INT)
+MODIFIES SQL DATA
+COMMENT 'ELIMINACIÓN: borra un cliente sin compras'
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM clientes WHERE id = p_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese cliente no existe';
+  END IF;
+  IF EXISTS (SELECT 1 FROM ventas WHERE cliente_id = p_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El cliente tiene compras: no se puede borrar';
+  END IF;
+  DELETE FROM clientes WHERE id = p_id;
+END //
+
 -- ---------- 5.3 Triggers ----------
 -- Integridad de un campo: un pago nunca puede ser mayor que el saldo
 CREATE OR REPLACE TRIGGER trg_pagos_valida
@@ -226,6 +392,14 @@ GRANT EXECUTE ON PROCEDURE agencia_proyecto.ventas_del_mes TO 'p_consulta'@'loca
 GRANT EXECUTE ON PROCEDURE agencia_proyecto.registrar_venta TO rol_vendedor;
 GRANT EXECUTE ON PROCEDURE agencia_proyecto.calcular_comisiones TO rol_gerente;
 GRANT EXECUTE ON FUNCTION  agencia_proyecto.saldo_venta TO rol_vendedor;
+-- El vendedor opera con los procedimientos CRUD (excepto cancelar y borrar, que son del gerente)
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.buscar_vehiculos   TO rol_vendedor;
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.listar_clientes    TO rol_vendedor;
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.estado_cuenta      TO rol_vendedor;
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.alta_cliente       TO rol_vendedor;
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.actualizar_cliente TO rol_vendedor;
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.registrar_pago     TO rol_vendedor;
+GRANT EXECUTE ON PROCEDURE agencia_proyecto.cambiar_estado_vehiculo TO rol_vendedor;
 
 -- ================= Pruebas =================
 SELECT modelo, precio, precio_sin_iva(precio) AS sin_iva, categoria_auto(precio) AS categoria FROM vehiculos ORDER BY precio LIMIT 6;
@@ -242,6 +416,19 @@ CALL registrar_venta(5, 3, 4, 690000.00, 200000.00, 'transferencia', @venta_nuev
 SELECT @venta_nueva AS venta_registrada, saldo_venta(@venta_nueva) AS saldo;
 SELECT id, modelo, estado FROM vehiculos WHERE id = 5;
 
+-- CRUD por procedimientos
+CALL buscar_vehiculos('BYD', NULL);
+CALL alta_cliente('  Laura Gómez ', '4771112233', 'Laura@Ejemplo.com', @nuevo);
+SELECT @nuevo AS cliente_nuevo;
+CALL actualizar_cliente(@nuevo, '4779990000', NULL);
+CALL registrar_pago(@venta_nueva, 90000.00, 'efectivo', @saldo);
+SELECT @saldo AS saldo_tras_pago;
+CALL cambiar_estado_vehiculo(9, 'apartado');
+CALL actualizar_precio(9, 879800.00);
+CALL estado_cuenta(3);
+CALL listar_clientes();
+CALL baja_cliente(@nuevo);
+SELECT COUNT(*) AS laura_ya_no_existe FROM clientes WHERE id = @nuevo;
 CALL calcular_comisiones();
 CALL tabla_de_pagos(@venta_nueva, 6);
 

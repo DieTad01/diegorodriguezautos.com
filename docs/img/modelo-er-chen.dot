@@ -1,0 +1,57 @@
+graph ER {
+  graph [layout=neato, overlap=false, splines=true, sep="+12", bgcolor="white", pad=0.3, fontname="DejaVu Sans"];
+  node  [fontname="DejaVu Sans", fontsize=11];
+  edge  [color="#333333", fontname="DejaVu Sans", fontsize=12, fontcolor="#8a6420"];
+
+  // ---------- Entidades (rectángulos) ----------
+  node [shape=box, style="filled", fillcolor="#050608", fontcolor="#d6aa63", penwidth=2, color="#c6943d", width=1.4, height=0.55];
+  ASESOR [label=<<b>ASESOR</b>>, pos="0,4!"];
+  CLIENTE [label=<<b>CLIENTE</b>>, pos="0,0!"];
+  VEHICULO [label=<<b>VEHÍCULO</b>>, pos="6,-3.6!"];
+  VENTA [label=<<b>VENTA</b>>, pos="6,2!"];
+  PAGO [label=<<b>PAGO</b>>, pos="12,2!"];
+
+  // ---------- Relaciones (rombos) ----------
+  node [shape=diamond, style="filled", fillcolor="#f4efe4", fontcolor="#111111", color="#8a6420", penwidth=1.5, width=1.5, height=0.9];
+  ATIENDE [label="atiende", pos="3,3.6!"];
+  COMPRA [label="compra", pos="3,0.6!"];
+  SE_VENDE [label="se vende\nen", pos="6,-0.8!"];
+  SE_LIQUIDA [label="se liquida\ncon", pos="9,2!"];
+
+  // ---------- Atributos (elipses; la llave va subrayada) ----------
+  node [shape=ellipse, style="filled", fillcolor="white", fontcolor="#111111", color="#5f6470", penwidth=1, width=0, height=0, margin="0.06,0.03"];
+  a_id [label=<<u>id_asesor</u>>, pos="-2.6,5.2!"]; a_nom [label="nombre", pos="-2.9,4.2!"];
+  a_cor [label="correo", pos="-1.2,5.6!"];     a_com [label="comisión", pos="0.6,5.6!"];
+  c_id [label=<<u>id_cliente</u>>, pos="-2.7,0.9!"]; c_nom [label="nombre", pos="-2.9,-0.2!"];
+  c_tel [label="teléfono", pos="-2.2,-1.2!"];     c_em [label="email", pos="-0.6,-1.4!"];
+  v_id [label=<<u>id_vehículo</u>>, pos="3.0,-3.0!"]; v_mar [label="marca", pos="3.2,-4.1!"];
+  v_mod [label="modelo", pos="3.9,-5.0!"];       v_an [label="año", pos="5.2,-5.5!"];
+  v_ver [label="versión", pos="6.6,-5.6!"];      v_pre [label="precio", pos="8.0,-5.2!"];
+  v_km [label="kilometraje", pos="9.1,-4.4!"];   v_col [label="color", pos="9.3,-3.4!"];
+  v_tr [label="transmisión", pos="9.0,-2.5!"];   v_est [label="estado", pos="8.2,-1.7!"];
+  e_id [label=<<u>id_venta</u>>, pos="4.6,3.5!"]; e_fe [label="fecha", pos="6.0,3.8!"];
+  e_pf [label="precio_final", pos="7.6,3.6!"];
+  e_sal [label="saldo", style="dashed,filled", pos="7.8,0.9!"];   // derivado (se calcula)
+  p_id [label=<<u>id_pago</u>>, pos="13.9,3.3!"]; p_fe [label="fecha", pos="14.4,2.2!"];
+  p_mo [label="monto", pos="14.1,1.1!"];         p_me [label="método", pos="12.8,0.5!"];
+
+  // ---------- Atributos a su entidad ----------
+  edge [color="#8c8f96", penwidth=1];
+  ASESOR -- {a_id a_nom a_cor a_com};
+  CLIENTE -- {c_id c_nom c_tel c_em};
+  VEHICULO -- {v_id v_mar v_mod v_an v_ver v_pre v_km v_col v_tr v_est};
+  VENTA -- {e_id e_fe e_pf};
+  VENTA -- e_sal [style=dashed];
+  PAGO -- {p_id p_fe p_mo p_me};
+
+  // ---------- Relaciones: cardinalidad y participación (doble línea = total) ----------
+  edge [color="#333333", penwidth=1.4];
+  ASESOR  -- ATIENDE   [label="1"];
+  ATIENDE -- VENTA     [label="N"];
+  CLIENTE -- COMPRA    [label="1"];
+  COMPRA  -- VENTA     [label="N", color="#333333:invis:#333333"];
+  VEHICULO -- SE_VENDE [label="1"];
+  SE_VENDE -- VENTA    [label="1", color="#333333:invis:#333333"];
+  VENTA -- SE_LIQUIDA  [label="1"];
+  SE_LIQUIDA -- PAGO   [label="N", color="#333333:invis:#333333"];
+}

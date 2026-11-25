@@ -50,7 +50,7 @@ paso "Contraseñas de los usuarios del proyecto"
 clave() { openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | cut -c1-20; }
 {
   echo "# Usuarios del proyecto (base $BD). Generadas $(date '+%Y-%m-%d %H:%M')."
-  for u in TEMPORAL TEMPORAL2 GERENTE VENDEDOR ANA CARLOS CONSULTA APP; do echo "CLAVE_$u=$(clave)"; done
+  for u in TEMPORAL TEMPORAL2 GERENTE VENDEDOR ANA CARLOS CONSULTA APP SISTEMA; do echo "CLAVE_$u=$(clave)"; done
 } > "$CRED"
 chmod 600 "$CRED"
 # shellcheck disable=SC1090
@@ -76,6 +76,7 @@ sed -e "s/__CLAVE_TEMPORAL__/$CLAVE_TEMPORAL/" -e "s/__CLAVE_TEMPORAL2__/$CLAVE_
     -e "s/__CLAVE_GERENTE__/$CLAVE_GERENTE/"   -e "s/__CLAVE_VENDEDOR__/$CLAVE_VENDEDOR/" \
     -e "s/__CLAVE_ANA__/$CLAVE_ANA/"           -e "s/__CLAVE_CARLOS__/$CLAVE_CARLOS/" \
     -e "s/__CLAVE_CONSULTA__/$CLAVE_CONSULTA/" -e "s/__CLAVE_APP__/$CLAVE_APP/" \
+    -e "s/__CLAVE_SISTEMA__/$CLAVE_SISTEMA/" \
     "$DIR/u3-acceso.sql" > "$TMP/u3.sql"
 grep -Eq '__CLAVE_[A-Z0-9]+__' "$TMP/u3.sql" && falla "Quedó una contraseña sin reemplazar en u3-acceso.sql"
 correr "$TMP/u3.sql" u3-acceso.txt
@@ -129,6 +130,9 @@ prueba() { # prueba usuario CLAVE permitido|negado "descripción" "SQL"
   prueba p_gerente  "$CLAVE_GERENTE"  permitido "comisiones (procedimiento con cursor)" "CALL calcular_comisiones()"
   prueba p_gerente  "$CLAVE_GERENTE"  negado    "entrar a la base del sitio real"    "SELECT * FROM agencia_autos.vehiculos LIMIT 1"
   prueba p_app      "$CLAVE_APP"      negado    "borrar una tabla (usuario de aplicación)" "DROP TABLE bitacora"
+  prueba p_sistema  "$CLAVE_SISTEMA"  negado    "sistema: leer la tabla clientes directamente" "SELECT * FROM clientes"
+  prueba p_sistema  "$CLAVE_SISTEMA"  negado    "sistema: insertar directamente" "INSERT INTO clientes (nombre) VALUES ('X')"
+  prueba p_sistema  "$CLAVE_SISTEMA"  permitido "sistema: consultar mediante procedimiento" "CALL buscar_vehiculos(NULL, 300000)"
 } > "$EVID/u3-pruebas-permisos.txt"
 grep -c '^✔' "$EVID/u3-pruebas-permisos.txt" | xargs -I{} echo "  {} de $(grep -c '^[✔✘]' "$EVID/u3-pruebas-permisos.txt") pruebas como se esperaba"
 if grep -q '^✘' "$EVID/u3-pruebas-permisos.txt"; then grep '^✘' "$EVID/u3-pruebas-permisos.txt"; aviso "Hay pruebas de permisos que no salieron como se esperaba"; fi
