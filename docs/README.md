@@ -21,6 +21,7 @@ Todo lo necesario para usar, administrar e instalar el sitio **diegorodriguezaut
 | 14 | [**Prepárate para tu examen de SQL**](14-examen-sql.md) | Entrar a la base desde Hostinger, acordeón, simulacro de 100 puntos con respuestas comprobadas y trampas típicas |
 | 15 | [**Mi cuenta (clientes)**](15-mi-cuenta-clientes.md) | Los compradores ven sus compras, pagos y saldo en `/mi-cuenta`; cómo darles acceso y registrar ventas y pagos |
 | 16 | [**Proyecto final · Taller de BD**](16-proyecto-taller-bd.md) | Las 6 unidades del curso sobre la base `agencia_proyecto`: qué archivo cubre cada actividad, cómo correrlo y cómo presentarlo |
+| 17 | [**Manual de comandos**](17-manual-comandos.md) | Cada comando del proyecto explicado: sintaxis, qué hace, ejemplo real y errores frecuentes |
 
 ## Comandos del servidor (en hPanel → VPS → Terminal)
 

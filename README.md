@@ -127,3 +127,4 @@ The full user manual lives in [`docs/`](docs/README.md):
 14. [SQL exam prep](docs/14-examen-sql.md): how to reach the practice DB from Hostinger, cheat sheet, 100-point mock exam with verified answers
 15. [Customer account](docs/15-mi-cuenta-clientes.md): buyers sign in at `/mi-cuenta` to see only their own purchases, payments and balance
 16. [Database course final project](docs/16-proyecto-taller-bd.md): DDL, DML, access control, concurrency, stored procedures/triggers and JDBC/ODBC on a separate `agencia_proyecto` database, with an evidence runner
+17. [Command manual](docs/17-manual-comandos.md): every SQL, client and connectivity command used in the project, explained with real examples

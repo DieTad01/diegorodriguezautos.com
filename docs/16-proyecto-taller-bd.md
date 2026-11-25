@@ -80,6 +80,8 @@ erDiagram
     }
 ```
 
+También como imagen: [diagrama-er-proyecto.png](img/diagrama-er-proyecto.png). Cada comando que usa el proyecto está explicado en el [17. Manual de comandos](17-manual-comandos.md).
+
 Además hay dos tablas de apoyo: `bitacora`, que llenan los triggers, y `existencias`, para las demostraciones de concurrencia.
 
 ## Cada actividad y su evidencia
